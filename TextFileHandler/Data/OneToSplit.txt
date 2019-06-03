@@ -1,0 +1,9 @@
+first to go to output7
+6 first to go to output6
+6 second to go to output6
+6 third to go to output6
+
+third to go to output7 (second was empty)
+fourth to go to output7
+6 fourth to go to output6
+fifth to go to output7

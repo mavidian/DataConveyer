@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="9bea5665-8eab-4b91-ae28-fe38d6c6398f" revisionNumber="1">
+  <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <introduction>
+       <para>
+         One of the design goals behind Data Conveyer is ease of use. This concept is demonstrated in the
+         following pages that describe consecutive attempts to orchestrate and execute data migrations while
+         gradually increasing complexity. The first attempt is a self-explanatory one-liner and each new attempt
+         builds on the prior one by introducing additional features.
+       </para>
+       <para>
+         You can follow the pages of this guide by pasting the code snippets into a .NET project of your
+         choice. Any recent version of Visual Studio (2012 or above) can be used. The project needs to target .NET
+         Framework 4.5 (or above) or .NET Core 2.0 (or above). The project also needs to reference DataConveyer.dll
+         along with its dependencies, such as System.Threading.Tasks.Dataflow.dll. The easiest way to satisfy these
+         conditions is by installing the DataConveyer NuGet package available at nuget.org. The code snippets are
+         provided in both C# and Visual Basic.
+       </para>
+    </introduction>
+
+     <section>
+        <title>Introductory Attempts</title>
+        <content>
+           <list class="bullet">
+              <listItem><para><link xlink:href="28fdbe7d-7304-4e76-bf0b-857dc7f7b922" /></para></listItem>
+              <listItem><para><link xlink:href="809a712b-8183-465d-aa66-46de66cebfd4" /></para></listItem>
+              <listItem><para><link xlink:href="fbd18535-990d-45d2-a211-4dcccdcef97d" /></para></listItem>
+              <listItem><para><link xlink:href="2ac8b82f-c4d7-4075-99e6-7d9f8f7deb4a" /></para></listItem>
+              <listItem><para><link xlink:href="44df6375-1f54-4440-9dac-2396a9e88527" /></para></listItem>
+              <listItem><para><link xlink:href="e5c1f2ba-f246-4516-b852-42ced1d10620" /></para></listItem>
+           </list>
+        </content>
+     </section>     
+     
+    <relatedTopics />
+
+  </developerConceptualDocument>
+</topic>

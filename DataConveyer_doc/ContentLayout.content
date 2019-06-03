@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Topics>
+  <Topic id="bc1db7e0-6011-496d-8f90-57281169e145" visible="True" isDefault="true" title="Welcome to Data Conveyer">
+    <HelpKeywords>
+      <HelpKeyword index="K" term="Welcome" />
+    </HelpKeywords>
+  </Topic>
+  <Topic id="a8bd29e8-a28a-4d07-81e1-10abce50f50d" visible="True" title="Terms of Use">
+    <HelpKeywords>
+      <HelpKeyword index="K" term="License, Agreement. Terms" />
+    </HelpKeywords>
+  </Topic>
+  <Topic id="9bea5665-8eab-4b91-ae28-fe38d6c6398f" visible="True" isExpanded="true" title="Data Conveyer Primer">
+    <HelpKeywords>
+      <HelpKeyword index="K" term="primer" />
+    </HelpKeywords>
+    <Topic id="28fdbe7d-7304-4e76-bf0b-857dc7f7b922" visible="True" title="First Attempt, One-Liner" />
+    <Topic id="809a712b-8183-465d-aa66-46de66cebfd4" visible="True" title="Second Attempt, File Copy" />
+    <Topic id="fbd18535-990d-45d2-a211-4dcccdcef97d" visible="True" title="Third Attempt, Format Converter" />
+    <Topic id="2ac8b82f-c4d7-4075-99e6-7d9f8f7deb4a" visible="True" title="Fourth Attempt, Synchronous Call" />
+    <Topic id="44df6375-1f54-4440-9dac-2396a9e88527" visible="True" title="Fifth Attempt, Timeout" />
+    <Topic id="e5c1f2ba-f246-4516-b852-42ced1d10620" visible="True" isSelected="true" title="Sixth Attempt, Await Asynchronously" />
+    <Topic id="4da71b1e-4fda-425b-acaa-c54f7d1106a3" visible="True" title="Process Summary" />
+  </Topic>
+  <Topic id="a37f29a4-4918-4efe-b20f-f2526ae6b518" visible="True" apiParentMode="InsertAsChild" title="API Reference">
+    <HelpKeywords>
+      <HelpKeyword index="K" term="API, Reference, Namespaces" />
+    </HelpKeywords>
+  </Topic>
+  <Topic id="e2e232b9-111d-4e56-b79c-ad2815ea9495" visible="True" title="Glossary">
+    <HelpKeywords>
+      <HelpKeyword index="K" term="glossary" />
+    </HelpKeywords>
+  </Topic>
+</Topics>

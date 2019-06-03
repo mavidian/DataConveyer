@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<topic id="28fdbe7d-7304-4e76-bf0b-857dc7f7b922" revisionNumber="1">
+	<developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+      <introduction>
+			<para>
+            Virtually every user definable element of the Data Conveyer's API can be omitted, in which
+            case Data Conveyer assumes a default value. This first attempt takes this fact to the
+            extreme by defining no parameters at all.
+         </para>
+      </introduction>
+
+      <section>
+			<title>Bare-bones Example</title>
+			<content>
+				<para>Here is a perfectly legitimate way to orchestrate and execute the entire data migration process.
+            For readability, two lines of code are used. However, the same statement can be re-written in a single line of code.</para>
+
+            <code language="c#">
+            using Mavidian.DataConveyer.Orchestrators;
+            OrchestratorCreator.GetEtlOrchestrator(new OrchestratorConfig()).ExecuteAsync();</code>
+            <code language="vb">
+            Imports Mavidian.DataConveyer.Orchestrators
+            OrchestratorCreator.GetEtlOrchestrator(new OrchestratorConfig()).ExecuteAsync()</code>
+
+            <para>A word of explanation: <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.OrchestratorCreator.GetEtlOrchestrator(Mavidian.DataConveyer.Orchestrators.OrchestratorConfig)</codeEntityReference>
+            is a factory method that creates an orchestrator instance for a given configuration;
+            <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.IOrchestrator.ExecuteAsync</codeEntityReference>
+            is a method that executes an orchestrated data migration process.</para>
+            
+            <para>Admittedly, the above code is not very useful as it simply transfers empty data. However, the second attempt will demonstrate
+            a sample code that performs a noticeable action.</para>
+            
+         </content>
+      </section>
+
+      <relatedTopics>
+         <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />    <!--Primer-->
+         <link xlink:href="a37f29a4-4918-4efe-b20f-f2526ae6b518" />    <!--API Reference-->
+         <link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />    <!--Glossary-->
+      </relatedTopics>
+
+   </developerConceptualDocument>
+</topic>

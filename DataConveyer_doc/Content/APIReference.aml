@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="a37f29a4-4918-4efe-b20f-f2526ae6b518" revisionNumber="1">
+   <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <introduction>
+      <para>This section documents the Application Programming Interface (API) exposed by Data Conveyer.</para>
+    </introduction>
+
+      <section>
+         <title>Namespaces</title>
+       <content>
+          <para>The API is divided into the following four namespaces:</para>
+          <list class="bullet">
+             <listItem><para><codeEntityReference>N:Mavidian.DataConveyer.Common</codeEntityReference></para></listItem>
+             <listItem><para><codeEntityReference>N:Mavidian.DataConveyer.Orchestrators</codeEntityReference></para></listItem>
+             <listItem><para><codeEntityReference>N:Mavidian.DataConveyer.Entities.KeyVal</codeEntityReference></para></listItem>
+             <listItem><para><codeEntityReference>N:Mavidian.DataConveyer.Logging</codeEntityReference></para></listItem>
+          </list>
+       </content>
+    </section>
+
+    <relatedTopics>
+       <link xlink:href="bc1db7e0-6011-496d-8f90-57281169e145" />   <!--Welcome-->
+       <link xlink:href="a8bd29e8-a28a-4d07-81e1-10abce50f50d" />   <!--License Agreement-->
+       <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />   <!--Primer-->
+       <link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />   <!--Glossary-->
+    </relatedTopics>
+      
+  </developerConceptualDocument>
+</topic>

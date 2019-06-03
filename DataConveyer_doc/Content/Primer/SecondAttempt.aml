@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="809a712b-8183-465d-aa66-46de66cebfd4" revisionNumber="1">
+  <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <introduction>
+      <para>The sample code below performs a noticeable action: it makes a copy of an input.txt file and saves it as an output.txt file.</para>
+    </introduction>
+
+    <section>
+      <title>Noticeable Action</title>
+      <content>
+         <para>
+            Data Conveyer's configuration settings, i.e. properties of the
+            <codeEntityReference>T:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig</codeEntityReference> object
+            can be assigned using the object initializer syntax. In our second attempt, we are specifying names of input
+            and output files, which tells Data Conveyer to read input from and write output to the respective files. In
+            absence of other settings, Data Conveyer assumes its default action of copying unchanged records. This action
+            in effect creates an identical copy of a text file.
+         </para>
+
+         <code language="c#">
+            using Mavidian.DataConveyer.Orchestrators;
+            var myConfig = new OrchestratorConfig()
+            {
+              InputFileName = "input.txt",
+              OutputFileName = "output.txt"
+            };
+            var orchtr = OrchestratorCreator.GetEtlOrchestrator(myConfig);
+            orchtr.ExecuteAsync();
+         </code>
+         <code language="vb">
+            Imports Mavidian.DataConveyer.Orchestrators
+            Dim myConfig = New OrchestratorConfig() With {
+              .InputFileName = "input.txt",
+              .OutputFileName = "output.txt"
+            }
+            Dim orchtr = OrchestratorCreator.GetEtlOrchestrator(myConfig)
+            orchtr.ExecuteAsync()
+         </code>
+
+      </content>
+    </section>
+
+     <relatedTopics>
+        <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />   <!--Primer-->
+        <link xlink:href="a37f29a4-4918-4efe-b20f-f2526ae6b518" />   <!--API Reference-->
+        <link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />   <!--Glossary-->
+     </relatedTopics>
+
+  </developerConceptualDocument>
+</topic>

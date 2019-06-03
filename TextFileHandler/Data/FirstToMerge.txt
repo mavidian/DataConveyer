@@ -1,0 +1,8 @@
+first of first
+second of first
+
+fourth of first (third was empty)
+fifth of first
+sixth of first (two more empty lines follow)
+
+

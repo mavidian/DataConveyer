@@ -1,0 +1,487 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="e2e232b9-111d-4e56-b79c-ad2815ea9495" revisionNumber="1">
+  <developerGlossaryDocument
+    xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <glossary>
+
+      <title>Terms related to Data Conveyer</title>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="api">API</term>
+          <term termId="api">Application Programming Interface</term>
+        </terms>
+        <definition>
+          <para>
+            A set of public types, methods, properties and other elements exposed by a library
+            intended to be used by external software.
+          </para>
+        </definition>
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="arb">Arbitrary data</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. A kind of text data where elements
+            (fields) are "cherry-picked" using regular expressions. This may be useful in situations
+            where row structure is complex requiring custom rules to identify fields.
+            Arbitrary data belongs to a textual data category.
+          </para>
+        </definition>
+        <relatedEntry termId="csv" />
+        <relatedEntry termId="ff" />
+        <relatedEntry termId="kw" />
+        <relatedEntry termId="raw" />
+        <relatedEntry termId="txtdata" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="canonical">Canonical data</term>
+        </terms>
+        <definition>
+          <para>
+            Canonical data (or Uniform data) is the internal data format used by Data Conveyer during transformations.
+            During intake and output processing Data Conveyer translates data rows of a given kind (such as Delimited or Keyword data)
+            to/from canonical data.
+          </para>
+          <para>
+            Canonical data is structured in a 3 tier hierarchy: cluster, record and item. One cluster contains a collection
+            of (zero to many) records and one record contains a collection of (zero to many) items.
+          </para>
+        </definition>
+        <relatedEntry termId="cluster" />
+        <relatedEntry termId="record" />
+        <relatedEntry termId="item" />
+        <relatedEntry termId="uniform" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="cluster">Cluster</term>
+        </terms>
+        <definition>
+          <para>
+            A collection of related records. For example, records related to a family, such as individual members,
+            address records, employment data, etc. can be grouped into a cluster.
+          </para>
+          <para>A cluster is the top tier in the canonical data hierarchy.</para>
+        </definition>
+        <relatedEntry termId="canonical" />
+        <relatedEntry termId="record" />
+        <relatedEntry termId="item" />
+        <relatedEntry termId="clusterbound" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="clusterbound">Clusterbound transformation</term>
+        </terms>
+        <definition>
+          <para>
+            A scenario where transformation is performed one cluster at a time. So, a clustrerbound transformer function accepts
+            a cluster as an input parameter and returns a cluster upon return.
+          </para>
+        </definition>
+        <relatedEntry termId="cluster" />
+        <relatedEntry termId="filter" />
+        <relatedEntry termId="recordbound" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="row">Data row</term>
+        </terms>
+        <definition>
+          <para>
+            A data row (or simply row) refers to a single line of data on intake or output. This is in contrast to a record,
+            which is a part of canonical data.
+          </para>
+        </definition>
+        <relatedEntry termId="record" />
+        <relatedEntry termId="canonical" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="csv">Delimited data</term>
+          <term termId="csv">Separated values</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. A kind of text data where element values (fields) are
+            separated by a given character, such as a comma. For example, dimensions of a 120 by 45 rectangle can be expressed as
+            <codeInline>"120,45"</codeInline> (without the quotes).
+            Delimited data belongs to a textual data category.
+          </para>
+        </definition>
+        <relatedEntry termId="arb" />
+        <relatedEntry termId="ff" />
+        <relatedEntry termId="kw" />
+        <relatedEntry termId="raw" />
+        <relatedEntry termId="txtdata" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="dll">DLL</term>
+          <term termId="dll">Dynamic link library</term>
+        </terms>
+        <definition>
+          <para>An industry standard file type that contains class libraries, for example DataConveyer.dll.</para>
+        </definition>
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="extline">External line</term>
+        </terms>
+        <definition>
+          <para>
+            A a unit of data sent to or received from Data Conveyer. Due to a variety of supported data kinds, Data Conveyer employs different mechanisms to read and write data.
+            External line allows these mechanisms to be treated using a common pattern. In functional programming lingo, such common pattern is called a discriminated union.</para>
+        </definition>
+        <relatedEntry termId="recdata" />
+        <relatedEntry termId="txtdata" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="filter">Filter transformation</term>
+        </terms>
+        <definition>
+          <para>
+            A scenario where transformation does not change the contents of a transformed entity (cluster or record), but
+            instead evaluates the entity and possibly removes it. So, a filter predicate function accepts an entity (cluster
+            or record) as an input parameter and returns true (to retain the entity) or false (to remove the entity from the output).
+          </para>
+          <para>Note that there are two separate filter predicate functions: ClusterFilterPredicate and RecordFilterPredicate.</para>
+        </definition>
+        <relatedEntry termId="clusterbound" />
+        <relatedEntry termId="recordbound" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="foot">Foot cluster</term>
+        </terms>
+        <definition>
+          <para>
+            A special empty cluster that can optionally be added during intake after the last cluster created from intake records.
+            Data Conveyer guarantees that in transformation phase the foot cluster gets processed after all other clusters (regardless
+            of ConcurrencyLevel setting).
+          </para>
+          <para>The foot cluster can be used during the transformation phase to add records containing data aggregated during processing of prior clusters.</para>
+        </definition>
+        <relatedEntry termId="head" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="ff">Fixed width data</term>
+          <term termId="ff">Flat file</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. A kind of text data where each element (field) is assigned
+            a fixed set of character positions in the record. For example, if both length and width fields occupy 3 character positions,
+            then dimensions of a 120 by 45 rectangle can be expressed as <codeInline>"120 45"</codeInline> (without the quotes).
+            Fixed width data belongs to a textual data category.
+          </para>
+        </definition>
+        <relatedEntry termId="arb" />
+        <relatedEntry termId="csv" />
+        <relatedEntry termId="kw" />
+        <relatedEntry termId="raw" />
+        <relatedEntry termId="txtdata" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="gcache">Global cache</term>
+        </terms>
+        <definition>
+          <para>
+            Global cache is a central, thread-safe repository of arbitrary key value pairs. Unlike trace bin or property bin objects,
+            which are attached to individual records (or clusters), there is only a single global cache object. Elements of global cache
+            are available throughout all phases of Data Conveyer processing.
+          </para>
+          <para>
+            In addition, global cache allows signaling to synchronize threads of Data Conveyer processing.
+          </para>
+          <para>
+            For example, global cache may be used to aggregate data during transformation processing, such as counting records that meet
+            certain conditions. Due to a multi-threaded nature of Data Conveyer, special care needs to be taken to assure thread-safety
+            when manipulating global cache elements.
+          </para>
+        </definition>
+        <relatedEntry termId="propbin" />
+        <relatedEntry termId="tracebin" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="head">Head cluster</term>
+        </terms>
+        <definition>
+          <para>A special empty cluster that can optionally be added during intake before the first cluster created from intake records.</para>
+        </definition>
+        <relatedEntry termId="foot" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="item">Item</term>
+        </terms>
+        <definition>
+          <para>
+            An item is the bottom tier of the canonical data hierarchy. It represents an element (field) within a record. For
+            example, a member record can contain items such as FirstName, LastName or DateOfBirth.
+          </para>
+          <para>
+            Items in Data Conveyer are typed, i.e. they have Type property; for example, DateOfBirth property might
+            be of DateTime type. The default item type is string.
+          </para>
+        </definition>
+        <relatedEntry termId="voiditm" />
+        <relatedEntry termId="canonical" />
+        <relatedEntry termId="cluster" />
+        <relatedEntry termId="record" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="kw">Keyword data</term>
+          <term termId="kw">Key value pairs</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. A kind of text data where each element (field) consists of
+            2 parts separated by an equal sign: a key (field name) and a value; elements in turn are separated by commas. For example,
+            dimensions of a 120 by 45 rectangle can be expressed as <codeInline>"length=120,width=45"</codeInline> (without the quotes).
+            Keyword data belongs to a textual data category.
+          </para>
+        </definition>
+        <relatedEntry termId="arb" />
+        <relatedEntry termId="csv" />
+        <relatedEntry termId="ff" />
+        <relatedEntry termId="raw" />
+        <relatedEntry termId="txtdata" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="orch">Orchestrator</term>
+        </terms>
+        <definition>
+          <para>
+            A key concept and the main component in processing data by Data Conveyer. Upon creation, the orchestrator collects settings
+            defining details of the entire process. The settings also involve functions, i.e. executable code.
+            During execution, the orchestrator manages component invocations, effectively combining the native and custom code into
+            a seamless and unique transformation process.
+          </para>
+        </definition>
+        <relatedEntry termId="gcache" />
+        <relatedEntry termId="tracebin" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="propbin">Property bin</term>
+        </terms>
+        <definition>
+          <para>
+            Property bin is a container of key value pairs that can be attached to records and clusters throughout Data Conveyer processing.
+            It allows passing of arbitrary data from one event (function) to another.
+          </para>
+          <para>
+            For example, there may be a common calculation formula required as a part of both transformer as well as router processing. In the
+            event that no result of such calculation is kept in the record or cluster, a property bin may be used to carry such data across the
+            processing phases and thus avoiding repetitive calculation.
+          </para>
+        </definition>
+        <relatedEntry termId="gcache" />
+        <relatedEntry termId="tracebin" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="raw">Raw data</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. A kind of text data which is not parsed by Data Conveyer and
+            every record is considered to have a single field with the entire contents of a data row. Raw data belongs to a textual data category.
+          </para>
+        </definition>
+        <relatedEntry termId="arb" />
+        <relatedEntry termId="csv" />
+        <relatedEntry termId="ff" />
+        <relatedEntry termId="kw" />
+        <relatedEntry termId="txtdata" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="record">Record</term>
+        </terms>
+        <definition>
+          <para>
+            A record is a defined as a middle tier in the canonical data hierarchy. For example, there may be multiple records in
+            a family cluster, where each member represents an individual family member.
+          </para>
+        </definition>
+        <relatedEntry termId="canonical" />
+        <relatedEntry termId="cluster" />
+        <relatedEntry termId="item" />
+        <relatedEntry termId="recordbound" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="recdata">Record-centric data</term>
+        </terms>
+        <definition>
+          <para>
+            A category of data kinds, where a unit of data sent to or received from Data Conveyer is a record expressed by a sequence of key-value pairs.
+            Examples of this category are XML or JSON data.
+          </para>
+        </definition>
+        <relatedEntry termId="txtdata" />
+        <relatedEntry termId="extline" />
+        <relatedEntry termId="xml" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="recordbound">Recordbound transformation</term>
+        </terms>
+        <definition>
+          <para>
+            A scenario where transformation is performed one record at a time. So, a recordbound transformer function accepts
+            a record as an input parameter and returns a record upon return.
+          </para>
+        </definition>
+        <relatedEntry termId="clusterbound" />
+        <relatedEntry termId="filter" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="txtdata">Textual data</term>
+        </terms>
+        <definition>
+          <para>
+            A category of data kinds, where a unit of data sent to or received from Data Conveyer is a line of text terminated by a line terminator, such as CR/LF on Windows.
+            Most, but not all, data kinds supported by Data Conveyer belong to this category.
+          </para>
+        </definition>
+        <relatedEntry termId="recdata" />
+        <relatedEntry termId="extline" />
+        <relatedEntry termId="arb" />
+        <relatedEntry termId="csv" />
+        <relatedEntry termId="ff" />
+        <relatedEntry termId="kw" />
+        <relatedEntry termId="raw" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="tracebin">Trace bin</term>
+        </terms>
+        <definition>
+          <para>
+            Trace bin is a container that can be attached to each record on intake, thus allowing to pass arbitrary data elements from one record to
+            another. In other words, it is a Data Conveyer's mechanism to manage state on intake, making it possible for subsequent records
+            to refer to data from prior records.
+          </para>
+          <para>
+            For example, when processing X12 data, some elements of the interchange envelope (such as ISA06 - Submitter ID) may be required in handling
+            subsequent segments. Trace bin allows such elements to be available when needed.
+          </para>
+          <para>
+            Trace bin elements can only be set during intake processing (using RecordInitiator function), but they are accessible in read-only mode throughout
+            the Data Conveyer processing.
+          </para>
+        </definition>
+        <relatedEntry termId="gcache" />
+        <relatedEntry termId="propbin" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="untypedrec">Untyped record</term>
+        </terms>
+        <definition>
+          <para>
+            A record that is unaware of types of the items it contains. Properties of untyped records that return item values
+            (e.g. indexers), always return string values. This is unlike (regular) records, where such properties return strongly typed
+            values. Untyped records can be casted to and from (regular) records.
+          </para>
+        </definition>
+        <relatedEntry termId="record" />
+        <relatedEntry termId="item" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="uniform">Uniform data</term>
+        </terms>
+        <definition>
+          <para>Same as canonical data.</para>
+        </definition>
+        <relatedEntry termId="canonical" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="voiditm">Void item</term>
+        </terms>
+        <definition>
+          <para>
+            A void item is an abstraction used by Data Conveyer to express "non-existing" items. In general, attempts to obtain an item for an absent key in the record result in void items.
+            Void items hold default values for their respective types (such as null in case of a string). Therefore, their behavior is typically intuitive requiring no special handling.
+          </para>
+        </definition>
+        <relatedEntry termId="item" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
+          <term termId="x12">X12 data</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. A kind of text data used for electronic data interchange according to
+            the ANSI ASC X12 standards. Data Conveyer parses X12 data so that each X12 segment becomes a record and each X12 element
+            becomes an item, while X12 transaction typically becomes a cluster. At present, X12 data belongs to a textual data category.
+          </para>
+        </definition>
+        <relatedEntry termId="txtdata" />
+        <relatedEntry termId="record" />
+        <relatedEntry termId="cluster" />
+      </glossaryEntry>
+      
+      <glossaryEntry>
+        <terms>
+          <term termId="xml">XML data</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. Extensible Markup Language (XML) is defined in W3C's XML 1.0 specification.
+            To facilitate translation into canonical data, XML data needs to be in a "tabular" format where elements, such as records and fields,
+            are unambiguously defined. XML data belongs to a record-centric data category.
+          </para>
+        </definition>
+        <relatedEntry termId="recdata" />
+        <relatedEntry termId="canonical" />
+      </glossaryEntry>
+
+    </glossary>
+  </developerGlossaryDocument>
+</topic>

@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="e5c1f2ba-f246-4516-b852-42ced1d10620" revisionNumber="1">
+  <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <introduction>
+       <para>
+          In our prior attempts, we accessed the Result property of the Task returned by the
+          <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.IOrchestrator.ExecuteAsync</codeEntityReference> method.
+          Is there a downside of calling Data Conveyer this way?
+       </para>
+       <para>
+          Imagine again a long running process being carried out by Data Conveyer. While waiting for the completion of the
+          process, our application is blocked and remains unresponsive. What can be done about it?
+       </para>
+    </introduction>
+
+    <section>
+      <title>True Asynchronous Call</title>
+      <content>
+
+         <para>
+            In order to avoid blocking and truly take advantage of the asynchronous nature of Data Conveyer, we need to call the
+            <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.IOrchestrator.ExecuteAsync</codeEntityReference>
+            method from within an asynchronous method and await a completion of the task returned by this call.
+         </para>
+
+        <para>
+          There are many ways to launch an asynchronous method. The easiest one (although not very robust) is to define a method
+          with a signature similar to: <codeInline>async Task MyProcessAsync()</codeInline> and call it synchronously like this:
+          <codeInline>MyProcessAsync().Wait()</codeInline>.
+        </para>
+
+        <alert class="note">
+            <para>
+              If you have followed the pages of this primer so far using a Console Application project, this may a good moment to pause
+              and consider a different project type. Majority of programming frameworks have built-in support for asynchronous methods.
+              For example, in a Windows Forms Application, we can provide an asynchronous handler of a button click event like this:
+              <codeInline>async void myButton_Click(object sender, EventArgs e)</codeInline>.
+            </para>
+         </alert>
+
+         <code language="c#">
+            using Mavidian.DataConveyer;
+            using Mavidian.DataConveyer.Orchestrators;
+            var config = new OrchestratorConfig()
+            {
+              InputDataKind = KindOfTextData.Delimited,
+              InputFileName = "input.csv",
+              HeadersInFirstInputRow = true,
+              OutputDataKind = KindOfTextData.Keyword,
+              OutputFileName = "output.kw"
+            };
+            ProcessResult rslt;
+            using (var orchtr = OrchestratorCreator.GetEtlOrchestrator(config))
+            {
+              rslt = await orchtr.ExecuteAsync();
+            }
+            if (rslt.CompletionStatus == CompletionStatus.IntakeDepleted)
+            {
+              Console.WriteLine($"Successfully converted {rslt.RowsWritten} records!");
+              //In a Windows Forms Application, provide feedback using a message box or text box instead
+            }
+         </code>
+         <code language="vb">
+            Imports Mavidian.DataConveyer
+            Imports Mavidian.DataConveyer.Orchestrators
+            Dim config = New OrchestratorConfig() With {
+              .InputDataKind = KindOfTextData.Delimited,
+              .InputFileName = "input.csv",
+              .HeadersInFirstInputRow = true,
+              .OutputDataKind = KindOfTextData.Keyword,
+              .OutputFileName = "output.kw"
+            }
+            Dim rslt As ProcessResult
+            Using orchtr = OrchestratorCreator.GetEtlOrchestrator(config)
+              rslt = Await orchtr.ExecuteAsync()
+            End Using
+            If rslt.CompletionStatus = CompletionStatus.IntakeDepleted Then
+              Console.WriteLine("Successfully converted {rslt.RowsWritten} records!")
+              'In a Windows Forms Application, provide feedback using a message box or text box instead
+            End If
+         </code>
+ 
+         <para>
+            We now have the best of both worlds: our application is simple and responsive as well. Simple, because
+            we delegated all the hard work to Data Conveyer. Responsive, because we called Data Conveyer
+            asynchronously from within an asynchronous method.
+         </para>
+
+      </content>
+    </section>
+
+     <relatedTopics>
+        <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />   <!--Primer-->
+        <link xlink:href="a37f29a4-4918-4efe-b20f-f2526ae6b518" />   <!--API Reference-->
+        <link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />   <!--Glossary-->
+     </relatedTopics>
+
+  </developerConceptualDocument>
+</topic>

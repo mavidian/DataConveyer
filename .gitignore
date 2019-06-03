@@ -328,3 +328,8 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+# Sandcastle Help File Builder generated files
+Help/
+WebHelp/
+*.shfbproj_*

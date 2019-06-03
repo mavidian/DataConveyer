@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<topic id="bc1db7e0-6011-496d-8f90-57281169e145" revisionNumber="1">
+	<developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+      <introduction>
+        <para>
+          Thank you for your interest in Data Conveyer, a lightweight transformation engine and a toolkit to facilitate data migrations.
+          Data Conveyer is an open source project.</para>
+        <para>In this document, you will find an introductory primer and a reference guide describing a public API exposed by Data Conveyer.</para>
+      </introduction>
+
+      <section>
+			<title>Getting Started</title>
+			<content>
+				<para>
+          Data Conveyer is a class library contained in a single DLL file. It requires no special installation and can be easily added via
+          the NuGet Package Manager to any .NET project targeting .NET Framework 4.5 (or above) or .NET Core 2.0 (or above). The code
+          snippets contained in this guide can be pasted into a Visual Studio project of any type, for example a console application.</para>
+         </content>
+      </section>
+
+		<relatedTopics>
+         <link xlink:href="a8bd29e8-a28a-4d07-81e1-10abce50f50d" />  <!--License Agreement-->
+         <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />  <!--Primer-->
+			<link xlink:href="a37f29a4-4918-4efe-b20f-f2526ae6b518" />  <!--API Reference-->
+			<link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />  <!--Glossary-->
+		</relatedTopics>
+	</developerConceptualDocument>
+</topic>

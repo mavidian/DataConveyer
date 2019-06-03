@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="fbd18535-990d-45d2-a211-4dcccdcef97d" revisionNumber="1">
+  <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <introduction>
+      <para>Data Conveyer excels at transforming data. Let's see how can we translate comma separated values into key value pairs (keyword data).</para>
+    </introduction>
+
+    <section>
+      <title>Automatic Conversion</title>
+      <content>
+         <para>
+            There are several data kinds (formats) natively supported by Data Conveyer. Conversion between any of these formats is a simple matter of
+            specifying the respective configuration settings.
+         </para>
+
+         <code language="c#">
+            using Mavidian.DataConveyer;
+            using Mavidian.DataConveyer.Orchestrators;
+            var config = new OrchestratorConfig()
+            {
+              InputDataKind = KindOfTextData.Delimited,
+              InputFileName = "input.csv",
+              HeadersInFirstInputRow = true,
+              OutputDataKind = KindOfTextData.Keyword,
+              OutputFileName = "output.kw"
+            };
+            using (var orchtr = OrchestratorCreator.GetEtlOrchestrator(config))
+            {
+              orchtr.ExecuteAsync();
+            }
+         </code>
+         <code language="vb">
+            Imports Mavidian.DataConveyer
+            Imports Mavidian.DataConveyer.Orchestrators
+            Dim config = New OrchestratorConfig() With {
+              .InputDataKind = KindOfTextData.Delimited,
+              .InputFileName = "input.csv",
+              .HeadersInFirstInputRow = true,
+              .OutputDataKind = KindOfTextData.Keyword,
+              .OutputFileName = "output.kw"
+            }
+            Using orchtr = OrchestratorCreator.GetEtlOrchestrator(config)
+              orchtr.ExecuteAsync()
+            End Using
+         </code>
+
+         <para>
+            In the code above, we have included the <codeEntityReference>P:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.InputDataKind</codeEntityReference>
+            and <codeEntityReference>P:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.OutputDataKind</codeEntityReference> properties, which
+            should be self-explanatory. We also set the <codeEntityReference>P:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.HeadersInFirstInputRow</codeEntityReference>
+            property to true, which tells Data Conveyer that the first input row contains column headers (field names) and not the actual data.
+         </para>
+
+        <alert class="note">
+          <para>
+            A careful reader's eye will notice the <codeInline>using</codeInline> block, which simply tells the Data Conveyer to dispose the orchestrator
+            after completing its work <legacyItalic>(Data Conveyer's orchestrators implement the IDisposable interface)</legacyItalic>. It is not strictly necessary,
+            but considered best practice in order to conserve memory.
+          </para>
+        </alert>
+
+      </content>
+    </section>
+
+     <relatedTopics>
+        <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />   <!--Primer-->
+        <link xlink:href="a37f29a4-4918-4efe-b20f-f2526ae6b518" />   <!--API Reference-->
+        <link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />   <!--Glossary-->
+     </relatedTopics>
+
+  </developerConceptualDocument>
+</topic>

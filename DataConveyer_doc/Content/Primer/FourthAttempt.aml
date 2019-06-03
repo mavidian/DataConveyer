@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="2ac8b82f-c4d7-4075-99e6-7d9f8f7deb4a" revisionNumber="1">
+  <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <introduction>
+      <para>What happens when we call the <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.IOrchestrator.ExecuteAsync</codeEntityReference> method?
+      This is an asynchronous method, so when we call it in the "fire &amp; forget" fashion like we did in the prior attempts, the unfortunate
+      answer is that "there is no way to know when the method completed or what was the outcome of its execution". What can we do in
+      order to call the asynchronous method in a more controlled way?</para>
+       <para>The simplest answer is to wait for completion of the method by blocking our thread of execution.</para>
+    </introduction>
+
+    <section>
+      <title>Sync Over Async</title>
+      <content>
+         <para>
+            The <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.IOrchestrator.ExecuteAsync</codeEntityReference> method, being
+            a "well-behaved" asynchronous method returns a Task, or more specifically a Task&lt;<codeEntityReference>T:Mavidian.DataConveyer.Orchestrators.ProcessResult</codeEntityReference>&gt;.
+            This makes it possible to wait until the method completes and then evaluate the result. In this fourth attempt, we synchronously
+            wait for the method completion by accessing the Result property of the returned Task. The current thread is blocked while waiting,
+            however once the wait is over, we are rewarded with the results of the completed process.
+      </para>
+
+         <code language="c#">
+            using Mavidian.DataConveyer;
+            using Mavidian.DataConveyer.Orchestrators;
+            var config = new OrchestratorConfig()
+            {
+              InputDataKind = KindOfTextData.Delimited,
+              InputFileName = "input.csv",
+              HeadersInFirstInputRow = true,
+              OutputDataKind = KindOfTextData.Keyword,
+              OutputFileName = "output.kw"
+            };
+            ProcessResult rslt;
+            using (var orchtr = OrchestratorCreator.GetEtlOrchestrator(config))
+            {
+              rslt = orchtr.ExecuteAsync().Result;
+            }
+            if (rslt.CompletionStatus == CompletionStatus.IntakeDepleted)
+            {
+              Console.WriteLine($"Successfully converted {rslt.RowsWritten} records!");
+            }
+         </code>
+         <code language="vb">
+            Imports Mavidian.DataConveyer
+            Imports Mavidian.DataConveyer.Orchestrators
+            Dim config = New OrchestratorConfig() With {
+              .InputDataKind = KindOfTextData.Delimited,
+              .InputFileName = "input.csv",
+              .HeadersInFirstInputRow = true,
+              .OutputDataKind = KindOfTextData.Keyword,
+              .OutputFileName = "output.kw"
+            }
+            Dim rslt As ProcessResult
+            Using orchtr = OrchestratorCreator.GetEtlOrchestrator(config)
+              rslt = orchtr.ExecuteAsync().Result
+            End Using
+            If rslt.CompletionStatus = CompletionStatus.IntakeDepleted Then
+              Console.WriteLine("Successfully converted {rslt.RowsWritten} records!")
+            End If
+         </code>
+
+      </content>
+    </section>
+
+     <relatedTopics>
+        <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />   <!--Primer-->
+        <link xlink:href="a37f29a4-4918-4efe-b20f-f2526ae6b518" />   <!--API Reference-->
+        <link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />   <!--Glossary-->
+     </relatedTopics>
+
+  </developerConceptualDocument>
+</topic>

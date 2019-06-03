@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="4da71b1e-4fda-425b-acaa-c54f7d1106a3" revisionNumber="1">
+  <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+     <introduction>
+      <para>We have now successfully completed a few attempts to orchestrate and execute data migrations. Let's generalize the
+      process and create a checklist of steps to implement a typical Data Conveyer based solution.</para>
+    </introduction>
+
+    <section>
+      <title>Step by Step Checklist</title>
+      <content>
+         <para>The procedure is very straightforward. Here is a complete list of steps to harness the power of Data Conveyer in a .NET project:</para>
+
+         <list class="ordered">
+
+            <listItem>
+               <para>
+                  Add a reference to the DataConveyer.dll library, e.g. via "Manage NuGet Packages..." option in Visual Studio.
+               </para>
+            </listItem>
+
+            <listItem>
+               <para>
+                  Create the configuration object, an instance of the <codeEntityReference>T:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig</codeEntityReference> class.
+               </para>
+            </listItem>
+
+            <listItem>
+               <para>
+                  Define the settings of the configuration object. It can be conveniently done during construction using the object initializer
+                  syntax or by assigning property values one at a time.
+               </para>
+               <alert class="tip">
+                  <para>
+                     This is the most involving aspect of the process. Note that many of the settings of Data Conveyer are functions, i.e. executable code.
+                  </para> 
+               </alert>            
+            </listItem>
+
+            <listItem>
+               <para>
+                  Execute the <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.OrchestratorCreator.GetEtlOrchestrator(Mavidian.DataConveyer.Orchestrators.OrchestratorConfig)</codeEntityReference> method
+                  to obtain an instance of the orchestrator object.
+               </para>
+            </listItem>
+
+            <listItem>
+               <para>
+                  Execute the <codeEntityReference>M:Mavidian.DataConveyer.Orchestrators.IOrchestrator.ExecuteAsync</codeEntityReference> method
+                  to launch the data migration process. Note that this method returns a Task&lt;<codeEntityReference>T:Mavidian.DataConveyer.Orchestrators.ProcessResult</codeEntityReference>&gt;,
+                  which can be awaited for.
+               </para>
+            </listItem>
+            
+            <listItem>
+               <para>
+                  Monitor (await) completion of the process launched in the previous step. This step is optional, but recommended.
+               </para>
+            </listItem>
+
+         </list>
+
+         <para>
+            These simple steps can be extended to include additional features, such as progress reporting, process cancellation,
+            result evaluation, etc. However, the overall approach will stay the same.
+         </para>
+
+      </content>
+
+    </section>
+
+    <relatedTopics>
+       <link xlink:href="9bea5665-8eab-4b91-ae28-fe38d6c6398f" />   <!--Primer-->
+       <link xlink:href="a37f29a4-4918-4efe-b20f-f2526ae6b518" />   <!--API Reference-->
+       <link xlink:href="e2e232b9-111d-4e56-b79c-ad2815ea9495" />   <!--Glossary-->
+    </relatedTopics>
+ 
+  </developerConceptualDocument>
+</topic>

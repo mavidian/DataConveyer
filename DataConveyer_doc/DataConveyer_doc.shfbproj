@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- The configuration and platform will be used to determine which assemblies to include from solution and
+				 project documentation sources -->
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>813a157f-267e-4b5b-b9a5-52cb4ef5b9cb</ProjectGuid>
+    <SHFBSchemaVersion>2017.9.26.0</SHFBSchemaVersion>
+    <!-- AssemblyName, Name, and RootNamespace are not used by SHFB but Visual Studio adds them anyway -->
+    <AssemblyName>DataConveyer_doc</AssemblyName>
+    <RootNamespace>DataConveyer_doc</RootNamespace>
+    <Name>DataConveyer_doc</Name>
+    <!-- SHFB properties -->
+    <FrameworkVersion>.NET Framework 4.7.2</FrameworkVersion>
+    <OutputPath>.\Help\</OutputPath>
+    <HtmlHelpName>DataConveyer</HtmlHelpName>
+    <Language>en-US</Language>
+    <TransformComponentArguments>
+      <Argument Key="logoFile" Value="Mavidian.png" />
+      <Argument Key="logoHeight" Value="" />
+      <Argument Key="logoWidth" Value="" />
+      <Argument Key="logoAltText" Value="" />
+      <Argument Key="logoPlacement" Value="left" />
+      <Argument Key="logoAlignment" Value="left" />
+      <Argument Key="maxVersionParts" Value="3" />
+      <Argument Key="defaultLanguage" Value="cs" />
+      <Argument Key="includeEnumValues" Value="false" />
+      <Argument Key="baseSourceCodeUrl" Value="" />
+      <Argument Key="requestExampleUrl" Value="" />
+    </TransformComponentArguments>
+    <DocumentationSources>
+      <DocumentationSource sourceFile="..\DataConveyer\DataConveyer.csproj" configuration="Release" />
+    </DocumentationSources>
+    <SaveComponentCacheCapacity>100</SaveComponentCacheCapacity>
+    <BuildAssemblerVerbosity>OnlyWarningsAndErrors</BuildAssemblerVerbosity>
+    <HelpFileFormat>HtmlHelp1, Website</HelpFileFormat>
+    <IndentHtml>False</IndentHtml>
+    <KeepLogFile>True</KeepLogFile>
+    <DisableCodeBlockComponent>False</DisableCodeBlockComponent>
+    <CleanIntermediates>True</CleanIntermediates>
+    <HelpFileVersion>not yet versioned</HelpFileVersion>
+    <MaximumGroupParts>2</MaximumGroupParts>
+    <NamespaceGrouping>False</NamespaceGrouping>
+    <SyntaxFilters>C#, Visual Basic</SyntaxFilters>
+    <SdkLinkTarget>Blank</SdkLinkTarget>
+    <RootNamespaceContainer>False</RootNamespaceContainer>
+    <PresentationStyle>VS2013</PresentationStyle>
+    <Preliminary>False</Preliminary>
+    <NamingMethod>Guid</NamingMethod>
+    <HelpTitle>Data Conveyer Documentation</HelpTitle>
+    <ContentPlacement>AboveNamespaces</ContentPlacement>
+    <NamespaceSummaries>
+      <NamespaceSummaryItem name="(global)" isDocumented="False" />
+      <NamespaceSummaryItem name="Mavidian.DataConveyer" isDocumented="False" />
+      <NamespaceSummaryItem name="Mavidian.DataConveyer.Entities.KeyVal" isDocumented="True">This namespace contains entities that define canonical data used by Data Conveyer.  In simple terms, KeyVal canonical data is a three level hierarchy consisting of: items (key value pairs), records and clusters.  Each cluster is a collection of records and each record is a collection of items.</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Mavidian.DataConveyer.Logging" isDocumented="True">This namespace contains elements that allow Data Conveyer to provide a detailed log of processing data between intake and output.</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Mavidian.DataConveyer.Orchestrators" isDocumented="True">This namespace contains elements that define characteristics of the process to convey data from intake to output.</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Mavidian.DataConveyer.Common" isDocumented="True">This namespace contains definitions of common types used througout the Data Conveyer assembly.</NamespaceSummaryItem>
+    </NamespaceSummaries>
+    <RootNamespaceTitle>Data Conveyer</RootNamespaceTitle>
+    <FooterText>
+    </FooterText>
+    <HeaderText>
+    </HeaderText>
+    <FeedbackEMailAddress>contact%40mavidian.com</FeedbackEMailAddress>
+    <CopyrightText>Copyright &amp;#169%3b 2016-2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.</CopyrightText>
+    <ProjectSummary>Data Conveyer™ is a lightweight transformation engine to facilitate real-time data migrations.</ProjectSummary>
+    <ApiFilter>
+      <Filter entryType="Namespace" fullName="Mavidian.DataConveyer" isExposed="False" />
+      <Filter entryType="Namespace" fullName="Mavidian.DataConveyer.License" isExposed="False" />
+      <Filter entryType="Namespace" fullName="Mavidian.DataConveyer.Orchestrators" isExposed="True">
+        <Filter entryType="Class" fullName="Mavidian.DataConveyer.Orchestrators.OrchestratorConfig" filterName="OrchestratorConfig" isExposed="True">
+          <Filter entryType="Property" fullName="Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.TimeLimit_ticks" filterName="TimeLimit_ticks" isExposed="False" />
+        </Filter>
+      </Filter>
+      <Filter entryType="Namespace" fullName="System" isExposed="True">
+        <Filter entryType="Class" fullName="System.Object" filterName="Object" isExposed="False" />
+        <Filter entryType="Class" fullName="System.ValueType" filterName="ValueType" isExposed="False" />
+      </Filter>
+    </ApiFilter>
+    <VisibleItems>InheritedMembers, InheritedFrameworkMembers, Protected, ProtectedInternalAsProtected, EditorBrowsableNever, NonBrowsable</VisibleItems>
+    <ComponentConfigurations>
+      <ComponentConfig id="IntelliSense Component" enabled="True">
+        <component id="IntelliSense Component">
+          <!-- Output options (optional)
+  Attributes:
+    Include namespaces (false by default)
+    Namespaces comments filename ("Namespaces" if not specified or empty)
+    Output folder (current folder if not specified or empty) -->
+          <output includeNamespaces="false" namespacesFile="Namespaces" folder="{@OutputFolder}" boundedCapacity="100" />
+        </component>
+      </ComponentConfig>
+      <ComponentConfig id="Code Block Component" enabled="True">
+        <component id="Code Block Component">
+          <basePath value="{@HtmlEncProjectFolder}" />
+          <outputPaths>{@HelpFormatOutputPaths}</outputPaths>
+          <allowMissingSource value="false" />
+          <removeRegionMarkers value="false" />
+          <colorizer syntaxFile="{@SHFBFolder}PresentationStyles\Colorizer\highlight.xml" styleFile="{@SHFBFolder}PresentationStyles\Colorizer\highlight.xsl" stylesheet="{@SHFBFolder}PresentationStyles\Colorizer\highlight.css" scriptFile="{@SHFBFolder}PresentationStyles\Colorizer\highlight.js" disabled="{@DisableCodeBlockComponent}" language="cs" tabSize="2" numberLines="false" outlining="false" keepSeeTags="false" defaultTitle="true" />
+        </component>
+      </ComponentConfig>
+    </ComponentConfigurations>
+    <WebsiteSdkLinkType>Msdn</WebsiteSdkLinkType>
+    <HtmlSdkLinkType>Msdn</HtmlSdkLinkType>
+    <IncludeFavorites>True</IncludeFavorites>
+    <BinaryTOC>True</BinaryTOC>
+  </PropertyGroup>
+  <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform
+			 the build.  The others are optional common platform types that may appear. -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|Win32' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|Win32' ">
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Content" />
+    <Folder Include="Content\Primer" />
+    <Folder Include="icons" />
+    <Folder Include="media" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Content\Primer\Summary.aml" />
+    <None Include="Content\Primer\SixthAttempt.aml" />
+    <None Include="Content\Primer\FourthAttempt.aml" />
+    <None Include="Content\Primer\ThirdAttempt.aml" />
+    <None Include="Content\Primer\SecondAttempt.aml" />
+    <None Include="Content\Primer\Primer.aml" />
+    <None Include="Content\Primer\FirstAttempt.aml" />
+    <None Include="Content\Primer\FifthAttempt.aml" />
+    <None Include="Content\APIReference.aml" />
+    <None Include="Content\Glossary.aml" />
+    <None Include="Content\TermsOfUse.aml" />
+    <None Include="Content\Welcome.aml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ContentLayout Include="ContentLayout.content" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="icons\Mavidian.png">
+      <ImageId>Mavidian</ImageId>
+      <AlternateText>Mavidian</AlternateText>
+    </Content>
+  </ItemGroup>
+  <!-- Import the SHFB build targets -->
+  <Import Project="$(SHFBROOT)\SandcastleHelpFileBuilder.targets" />
+  <!-- The pre-build and post-build event properties must appear *after* the targets file import in order to be
+			 evaluated correctly. -->
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+  </PropertyGroup>
+</Project>

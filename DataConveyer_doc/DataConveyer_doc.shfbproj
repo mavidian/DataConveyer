@@ -144,6 +144,7 @@
     <None Include="Content\Glossary.aml" />
     <None Include="Content\TermsOfUse.aml" />
     <None Include="Content\Welcome.aml" />
+    <Content Include="icons\favicon.ico" />
   </ItemGroup>
   <ItemGroup>
     <ContentLayout Include="ContentLayout.content" />

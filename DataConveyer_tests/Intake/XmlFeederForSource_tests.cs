@@ -130,7 +130,7 @@ namespace DataConveyer_tests.Intake
 	</Members>
 </Root>",
              //settings:
-             "CollectionNode|Root/Members[@q=\"good\"],RecordNode|Member",
+             "CollectionNode|Root/Members[@q=\"good\"],RecordNode|Member,IncludeAttributes|truePlain",
              //expected:
              new List<Xrecord>
              {
@@ -822,11 +822,11 @@ namespace DataConveyer_tests.Intake
   </Members>
 </Root>",
              //settings:
-             "CollectionNode|Root/Members[@region=\"North\"],ClusterNode|Group[@id=2][@zone=\"\"]/Subgroup/Family,RecordNode|Data/Member[@class]",
+             "CollectionNode|Root/Members[@region=\"North\"],ClusterNode|Group[@id=2][@zone=\"\"]/Subgroup/Family,RecordNode|Data/Member[@class],IncludeAttributes|true",
              //expected:
              new List<Xrecord>
              {
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("class","main" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@class","main" as object),
                                                                Tuple.Create("ID","1" as object),
                                                                Tuple.Create("FName","Paul" as object),
                                                                Tuple.Create("LName","Smith" as object),
@@ -834,21 +834,21 @@ namespace DataConveyer_tests.Intake
                                                                Tuple.Create("DOB", "1/12/1988" as object)
                                                              }
 , 1                           ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("class","main" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@class","main" as object),
                                                                Tuple.Create("ID","2" as object),
                                                                Tuple.Create("FName","John" as object),
                                                                Tuple.Create("LName","Green" as object),
                                                                Tuple.Create("DOB", "8/23/1967" as object)
                                                              }
 , 2                            ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("class","aux" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@class","aux" as object),
                                                                Tuple.Create("ID","4" as object),
                                                                Tuple.Create("FName","Johnny" as object),
                                                                Tuple.Create("LName","Green" as object),
                                                                Tuple.Create("DOB", "5/3/1997" as object)
                                                              }
 , 2                            ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("class","other" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@class","other" as object),
                                                                Tuple.Create("ID","3" as object),
                                                                Tuple.Create("FName","Joseph" as object),
                                                                Tuple.Create("LName","Doe" as object),
@@ -885,7 +885,7 @@ namespace DataConveyer_tests.Intake
 	</Member>
 </Members>",
              //settings:
-             "CollectionNode|Members,RecordNode|Member,IncludeExplicitText|true",
+             "CollectionNode|Members,RecordNode|Member,IncludeExplicitText|true,IncludeAttributes|truePlain",
              //expected:
              new List<Xrecord>
              {
@@ -920,16 +920,15 @@ namespace DataConveyer_tests.Intake
 @"<?xml version=""1.0"" encoding=""UTF-8"" ?>
 <Members>
 	<Member ID=""1"">
-		<Name>Jones<First>Paul<Suffix>Jr</Suffix>Mike</First>-Junior<Last>Smith</Last></Name>
+		<Name>Jones<First  category=""special"" special=""dualName"">Paul<Suffix>Jr</Suffix>Mike</First>-Junior<Last>Smith</Last></Name>
 		<DOB>1/12/1988</DOB>
 		<Empty></Empty>
 	</Member>
 	<Dummy>Non-record node to be ignored</Dummy>
-	<Member ID=""2"">
-		<Name>
+	<Member ID=""2"">Explicit <Name>
 			<First>John</First>
 			<Last>Green</Last>
-		</Name>Explicit record text<Empty/>
+		</Name>record text<Empty/>
 		<DOB>8/23/1967</DOB>
 	</Member>
 	<Member ID=""3"">
@@ -943,12 +942,14 @@ namespace DataConveyer_tests.Intake
 	</Member>
 </Members>",
              //settings:
-             "CollectionNode|Members,RecordNode|Member,IncludeExplicitText|true",
+             "CollectionNode|Members,RecordNode|Member,IncludeExplicitText|true,IncludeAttributes|true",
              //expected:
              new List<Xrecord>
              {
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","1" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@ID","1" as object),
                                                                Tuple.Create("Name.First.Suffix","Jr" as object),
+                                                               Tuple.Create("Name.First.@category","special" as object),
+                                                               Tuple.Create("Name.First.@special","dualName" as object),
                                                                Tuple.Create("Name.First","PaulMike" as object),
                                                                Tuple.Create("Name.Last","Smith" as object),
                                                                Tuple.Create("Name","Jones-Junior" as object),
@@ -956,7 +957,7 @@ namespace DataConveyer_tests.Intake
                                                                Tuple.Create("Empty", string.Empty as object)
                                                              }
                            ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","2" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@ID","2" as object),
                                                                Tuple.Create("Name.First","John" as object),
                                                                Tuple.Create("Name.Last","Green" as object),
                                                                Tuple.Create("Name",string.Empty as object),
@@ -965,11 +966,11 @@ namespace DataConveyer_tests.Intake
                                                                Tuple.Create("__explicitText__", "Explicit record text" as object)
                                                              }
                            ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","3" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@ID","3" as object),
                                                                Tuple.Create("Name","Donald Duck" as object)
                                                              }
                            ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","4" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("@ID","4" as object),
                                                                Tuple.Create("Name.First","Joseph" as object),
                                                                Tuple.Create("Name.Last","Doe" as object),
                                                                Tuple.Create("Name",string.Empty as object),

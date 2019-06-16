@@ -170,7 +170,7 @@ namespace DataConveyer_tests.Orchestrators
   </Family>
 </Members>",
              //settings:
-             "CollectionNode|Members,ClusterNode|Family,RecordNode|Member,AttributeFields|ID,IndentChars|  "  //IndentChars and AttributeFields relevant only on output
+             "CollectionNode|Members,ClusterNode|Family,RecordNode|Member,IncludeAttributes|truePlain,AttributeFields|ID,IndentChars|  "  //IncludeAttributes relevant only on intake; IndentChars and AttributeFields relevant only on output
                                                     ) //Tuple.Create
                           );  //Add Test_2a
 #endregion Test_2a
@@ -314,7 +314,7 @@ namespace DataConveyer_tests.Orchestrators
   </Members>
 </Root>",
              //settings:
-             "CollectionNode|Root/Members[@region=\"North\"],ClusterNode|Group[@id=2][@zone=\"\"]/Subgroup/Family,RecordNode|Data/Member,AttributeFields|class,IndentChars|  "  //IndentChars and AttributeFields relevant only on output
+             "CollectionNode|Root/Members[@region=\"North\"],ClusterNode|Group[@id=2][@zone=\"\"]/Subgroup/Family,RecordNode|Data/Member,IncludeAttributes|truePlain,AttributeFields|class,IndentChars|  "  //IncludeAttributes relevant only on intake; IndentChars and AttributeFields relevant only on output
                                                     ) //Tuple.Create
                           );  //Add Test_3a
 #endregion Test_3a

@@ -1,6 +1,6 @@
 ﻿{ // Used by Nerdbank.GitVersioning
   "$schema": "https://raw.githubusercontent.com/AArnott/Nerdbank.GitVersioning/master/src/NerdBank.GitVersioning/version.schema.json",
-  "version": "3.0", // major.minor - keeep up-to-date with changelog.md
+  "version": "3.1", // major.minor - keeep up-to-date with changelog.md
   "buildNumberOffset": -1, // so that first build is 0 (built AFTER commit)
   "publicReleaseRefSpec": [
     "^refs/heads/" // every branch is a release branch!

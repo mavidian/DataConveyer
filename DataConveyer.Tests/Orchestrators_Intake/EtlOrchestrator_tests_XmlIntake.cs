@@ -120,9 +120,8 @@ namespace DataConveyer.Tests.Orchestrators_Intake
          clstr.ClstrNo.Should().Be(2);
          clstr.Count.Should().Be(1);  //a single record cluster
          rec = clstr[0];
-         rec.Count.Should().Be(5);  //1 attribute + 4 inner nodes
+         rec.Count.Should().Be(4);  //just 4 inner nodes (attributes are not included)
          rec.ClstrNo.Should().Be(2);
-         rec["no"].Should().Be("2");
          rec["ID"].Should().Be("2");
          rec["FName"].Should().Be("John");  //attribute on the inner node doesn't matter
          rec["LName"].Should().Be("Green");
@@ -146,7 +145,7 @@ namespace DataConveyer.Tests.Orchestrators_Intake
       {
          //arrange
          _config.AllowOnTheFlyInputFields = true;
-         _config.XmlJsonIntakeSettings = "CollectionNode|Root/Members[@q=\"good\"],RecordNode|Member";
+         _config.XmlJsonIntakeSettings = "CollectionNode|Root/Members[@q=\"good\"],RecordNode|Member,IncludeAttributes|true";
          _config.ExplicitTypeDefinitions = "ID|I,DOB|D";
 
          var orchestrator = TestUtilities.GetTestOrchestrator(_config, "_clusteringBlock", _resultsExtractor);
@@ -175,11 +174,12 @@ namespace DataConveyer.Tests.Orchestrators_Intake
          clstr.ClstrNo.Should().Be(2);
          clstr.Count.Should().Be(1);  //a single record cluster
          rec = clstr[0];
-         rec.Count.Should().Be(5);  //1 attribute + 4 inner nodes
+         rec.Count.Should().Be(6);  //2 attributes + 4 inner nodes
          rec.ClstrNo.Should().Be(2);
-         rec["no"].Should().Be("2");
+         rec["@no"].Should().Be("2");
          rec["ID"].Should().Be(2);
-         rec["FName"].Should().Be("John");  //attribute on the inner node doesn't matter
+         rec["FName"].Should().Be("John");
+         rec["FName.@blah"].Should().Be("blah");
          rec["LName"].Should().Be("Green");
          rec["DOB"].Should().Be(new DateTime(1967, 8, 23));
 

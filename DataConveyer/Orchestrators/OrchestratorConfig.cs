@@ -1079,7 +1079,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///     <term>CollectionNode</term>
       ///     <description>
       ///       "xpath" to the collection of clusters (or records if the ClusterNode parameter is absent).
-      ///       If this parameter is absent for <see cref="KindOfTextData.XML"/>, then intake is expected to contain XML fragment where each root constitutes record or cluster.
+      ///       If this parameter is absent for <see cref="KindOfTextData.XML"/>, then intake is expected to contain XML fragment where each root constitutes a record or a cluster.
       ///       In case of <see cref="KindOfTextData.JSON"/>, absent or empty value generally means an array instead of an object.
       ///     </description>
       ///   </item>
@@ -1102,8 +1102,16 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///     <term>IncludeExplicitText</term>
       ///     <description>
       ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. true to include explicit text inside record nodes in XML data; false (default) to ignore explicit text.
-      ///       Explicit text is the text contained directly inside an XML element that also contains inner elements; for example &lt;rec&gt;ExplicitText&lt;ID&gt;2&lt;/ID&gt;&lt;/rec&gt;.
+      ///       Explicit text is the text contained directly inside an XML element that represents the record node; this is not typically expected.
       ///       Data Conveyer assigns a special key of "__explicitText__" to explicit text in the record node.
+      ///     </description>
+      ///   </item>
+      ///   <item>
+      ///     <term>IncludeAttributes</term>
+      ///     <description>
+      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. true to include attributes (the key of the corresponding item will be prefixed by @); truePlain to include attributes (without prefix in item key); false (default) to ignore explicit text.
+      ///       It is generally recommended that the keys (names) of items that originate from XML attributes be prepended with @; therefore setting of true is preferred over truePlain.
+      ///       In the latter case, name conflicts are possible between items originating from attributes and inner nodes. 
       ///     </description>
       ///   </item>
       /// </list>
@@ -2133,7 +2141,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///     <term>CollectionNode</term>
       ///     <description>
       ///       "xpath" defining the collection of clusters (or records if the ClusterNode parameter is absent).
-      ///       If this parameter is absent for <see cref="KindOfTextData.XML"/>, then output will contain XML fragment where each root constitutes record or cluster.
+      ///       If this parameter is absent for <see cref="KindOfTextData.XML"/>, then output will contain XML fragment where each root constitutes a record or a cluster.
       ///       In case of <see cref="KindOfTextData.JSON"/>, absent or empty value generally means an array instead of an object.
       ///     </description>
       ///   </item>
@@ -2154,7 +2162,11 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///   </item>
       ///   <item>
       ///     <term>AttributeFields</term>
-      ///     <description><see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. A semi-colon separated list of field names (item keys) to be projected as attributes of the record node (and not inner nodes).</description>
+      ///     <description>
+      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>.
+      ///       A semi-colon separated list of field names (item keys) to be projected as attributes of the record node (and not inner nodes).
+      ///       In addition, all fields with names starting with @ will be projected as attributes of the record node (the @ will not be removed from the attribute name).
+      ///     </description>
       ///   </item>
       ///   <item>
       ///     <term>IndentChars</term>

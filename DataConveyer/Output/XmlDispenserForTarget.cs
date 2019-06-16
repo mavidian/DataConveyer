@@ -247,10 +247,15 @@ namespace Mavidian.DataConveyer.Output
          {
             //Don't write records right away as some items may need to be written as attributes (and not inner nodes)
             // Instead, collect all attributes and inner nodes to write.
+            //Items to be written as attributes are those that start with @ or are listed in AttributeFields part of XmlJsonOutputSettings.
             var innerNodesToWrite = new List<Tuple<string, object>>();
             foreach (var item in line.Items)
             {
-               if (_attributeFields.Contains(item.Item1))
+               if (item.Item1[0] == '@')
+               {  //attribute
+                  attrsToWrite.Add(Tuple.Create(item.Item1.Substring(1),item.Item2));
+               }
+               else if (_attributeFields.Contains(item.Item1))
                {  //attribute
                   attrsToWrite.Add(item);
                }

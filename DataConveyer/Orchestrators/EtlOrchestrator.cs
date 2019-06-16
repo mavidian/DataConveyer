@@ -717,7 +717,7 @@ namespace Mavidian.DataConveyer.Orchestrators
             //Check if 1st line contains headers (except for KW or arbitrary data)
             if (_config.InputDataKind.CanHaveHeaderRow() &&
                 _config.HeadersInFirstInputRow &&
-                currentLine != null)  //make sure 1st line is supplied (e.g. DefaultIntakeSupplier supplies just the null line, i.e. EOF)
+                currentLine != null)  //make sure 1st line is supplied (e.g. DefaultIntakeSupplier supplies just the null line, i.e. EOD mark)
             {
                //read first line to determine field headers (aka field names aka keys)
                _intakeProvider.IncludeFieldsEnMasse(_intakeProvider.FieldTokenizer(currentLine.Item3));
@@ -831,7 +831,7 @@ namespace Mavidian.DataConveyer.Orchestrators
             //Check if 1st line contains headers (except for kinds that can't have headers)
             if (_config.InputDataKind.CanHaveHeaderRow() &&
                 _config.HeadersInFirstInputRow &&
-                currentLine != null)  //make sure 1st line is supplied (e.g. DefaultIntakeSupplier supplies just the null line, i.e. EOF)
+                currentLine != null)  //make sure 1st line is supplied (e.g. DefaultIntakeSupplier supplies just the null line, i.e. EOD)
             {
                //read first line to determine field headers (aka field names aka keys)
                _intakeProvider.IncludeFieldsEnMasse(_intakeProvider.FieldTokenizer(currentLine.Item3));

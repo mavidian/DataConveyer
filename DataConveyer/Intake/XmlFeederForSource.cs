@@ -46,6 +46,8 @@ namespace Mavidian.DataConveyer.Intake
       //Discrete settings determined by the ctor:
       private readonly XmlNodePath _collNodePath, _clstrNodePath, _xrecNodePath;
       private readonly bool _includeExplicitText;
+      private readonly bool _includeAttributes;
+      private readonly bool _addPrefixToAttrKeys;  // only relevant when _includeAttributes is true
       private readonly bool _observeClusters;  //true if non-empty ClusterNode setting is present
 
       private int _currClstrCnt;  //cluster counter/number (0=undetermined)
@@ -80,11 +82,15 @@ namespace Mavidian.DataConveyer.Intake
          //    ClusterNode         - "xpath" to cluster node within collection node (null/empty means single record clusters)
          //    RecordNode          - "xpath" to record node within cluster node (or collection node if cluster node is empty)
          //    IncludeExplicitText - true to include explicit text in RecordNode; false (default) to ignore it
+         //    IncludeAttributes   - true to include attributes (prefixed by @); truePlain to include attributes w/o prefix; false (default) to ignore them
          // "xpath" is always relative (no need for ./), each of the nodes (separated by /) can contain attribute
          _collNodePath = new XmlNodePath(settingDict.GetStringSetting("CollectionNode"));
          _clstrNodePath = new XmlNodePath(settingDict.GetStringSetting("ClusterNode"));
          _xrecNodePath = new XmlNodePath(settingDict.GetStringSetting("RecordNode"));
          _includeExplicitText = settingDict.GetStringSetting("IncludeExplicitText")?.ToLower() == "true";
+         var inclAttrsSetting = settingDict.GetStringSetting("IncludeAttributes")?.ToLower();
+         _includeAttributes = inclAttrsSetting.SafeSubstring(0,4) == "true";
+         _addPrefixToAttrKeys = inclAttrsSetting != "trueplain";
          _observeClusters = !_clstrNodePath.IsEmpty;
 
          _currClstrCnt = 0; //will stay at 0 (undetermined) unless ClusterNode defined
@@ -293,17 +299,9 @@ namespace Mavidian.DataConveyer.Intake
          var xrecordItems = new List<Tuple<string, object>>();
          var elemDepth = _xmlReader.Depth;
 
-         //Add record items from attributes
-         if (_xmlReader.HasAttributes)
-         {
-            while (_xmlReader.MoveToNextAttribute())
-            {
-               xrecordItems.Add(Tuple.Create(_xmlReader.Name, _xmlReader.Value as object));  //note that XML values (unlike JSON values) are always of string type
-            }
-         }
-
          //Add record items from inner elements
          var explicitText = AddXrecordItems(xrecordItems, elemDepth, string.Empty);  //this will add items to xrecordItems
+
          if (_includeExplicitText && !string.IsNullOrWhiteSpace(explicitText))
          {  // add a text placed directly in the record element node (this is not typically expected)
             xrecordItems.Add(Tuple.Create("__explicitText__", explicitText as object));
@@ -314,14 +312,17 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
-      /// Recursive method to add items to a given record
+      /// Recursive method to add items to a given element.
       /// </summary>
-      /// <param name="itemsSoFar">List of record items to add new items to</param>
-      /// <param name="elemDepth">Depth (level) of the record element</param>
+      /// <param name="itemsSoFar">List of record items to add new items to.</param>
+      /// <param name="elemDepth">Depth (level) of the element.</param>
       /// <param name="keySoFar">Name prefix "accumulated" so far, empty except for nested items, i.e. recursive call where higher level item keys are prefixed with a . separator, e.g. Name.Last</param>
       /// <returns>Text (accumulated) of the current node.</returns>
       private string AddXrecordItems(List<Tuple<string, object>> itemsSoFar, int elemDepth, string keySoFar)
       {
+         //Add record items from attributes
+         GetAttributes(keySoFar).ToList().ForEach(a => itemsSoFar.Add(a));
+
          _xmlReader.MoveToContent();
          Debug.Assert(_xmlReader.IsStartElement());  //each recursive call must be at the element node
          string retVal = string.Empty; //to be returned (to the higher/outer recursive level)
@@ -332,13 +333,15 @@ namespace Mavidian.DataConveyer.Intake
             string innerKey = keySoFar;
 
             if (_xmlReader.IsEmptyElement)
-            { // special case (e.g. <Empty/>), will not be followed by the end element; add item immediately
-               itemsSoFar.Add(Tuple.Create(_xmlReader.Name, string.Empty as object));
+            { // special case (e.g. <Empty/>), will not be followed by the end element; add item immediately (but first, add attributes if any)
+               var currentKey = CreateKey(keySoFar);
+               GetAttributes(currentKey).ToList().ForEach(a => itemsSoFar.Add(a));
+               itemsSoFar.Add(Tuple.Create(currentKey, string.Empty as object));
                continue;
             }
             if (_xmlReader.IsStartElement())
             { //recursive call to inner level
-               innerKey = string.IsNullOrEmpty(innerKey) ? _xmlReader.Name : innerKey + "." + _xmlReader.Name;
+               innerKey = CreateKey(innerKey);
                innerVal = AddXrecordItems(itemsSoFar, elemDepth + 1, innerKey);
             }
             if (_xmlReader.NodeType == XmlNodeType.Text)
@@ -350,8 +353,44 @@ namespace Mavidian.DataConveyer.Intake
                itemsSoFar.Add(Tuple.Create(innerKey, innerVal as object));
             }
          }
+
          return retVal;
       }
 
+
+      /// <summary>
+      /// Read attributes of the current mode and (if _includeAttributes is true) create corresponding items.
+      /// </summary>
+      /// <param name="keySoFar">The key created from outer nodes.</param>
+      /// <returns>A (possibly empty) sequence of items created from current node.</returns>
+      private IEnumerable<Tuple<string,object>> GetAttributes(string keySoFar)
+      {
+         if (_xmlReader.HasAttributes)
+         {
+            while (_xmlReader.MoveToNextAttribute())
+            {
+               if (_includeAttributes)
+               {
+                  var attrKey = CreateKey(keySoFar, _addPrefixToAttrKeys);  //keys created out of attribute names are prefixed with @ (unless _addPrefixToAttrKeys is false)
+                  yield return Tuple.Create(attrKey, _xmlReader.Value as object);  //note that XML values (unlike JSON values) are always of string type
+               }
+            }
+         }
+         yield break;
+      }
+
+
+      /// <summary>
+      /// Determine item key by appending name of the current node (or attribute) to the key built from outer nodes.
+      /// </summary>
+      /// <param name="keySoFar">The key created from outer nodes.</param>
+      /// <param name="prependAtSign">true = prepend name with @ (to be used with attributes), false = just use the name of the current node (or attribute) w/o @ prefix.</param>
+      /// <returns>The new key value</returns>
+      private string CreateKey(string keySoFar, bool prependAtSign)
+      {
+         var newKeySegment = prependAtSign ? $"@{_xmlReader.Name}" : _xmlReader.Name;
+         return string.IsNullOrEmpty(keySoFar) ? newKeySegment : $"{keySoFar}.{newKeySegment}";
+      }
+      private string CreateKey(string keySoFar) => CreateKey(keySoFar, false);  //this overload applies to element nodes (also to attributes if _addPrefixToAttrKeys is false)
    }
 }

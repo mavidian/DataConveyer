@@ -394,7 +394,7 @@ namespace Mavidian.DataConveyer.Intake
       /// <summary>
       /// Read a single line from intake. In case of X12, the line means segment (so, CR/LF is not (necessarily) a delimiter).
       /// </summary>
-      /// <returns>A tuple consisting of the line sequence number (1-based), source number (1-based) and the line read from intake; or null as EOF mark</returns>
+      /// <returns>A tuple consisting of the line sequence number (1-based), source number (1-based) and the line read from intake; or null as EOD mark</returns>
       internal Tuple<int, int, ExternalLine> GetLineFromIntake()
       {
          // linePlus is a Tuple<ExternalLine,int>: Item1 = line, Item2 = source number
@@ -410,7 +410,7 @@ namespace Mavidian.DataConveyer.Intake
          }
          while (linePlus != null && linePlus.Item1 == null);  // ignore tuples with null lines (end-of-data marks for individual sources)
 
-         if (linePlus == null) return null;  // EOF
+         if (linePlus == null) return null;  // EOD mark
 
          var lineCnt = Interlocked.Increment(ref _lineCnt);  // adjustment for header row(s) may be needed
 
@@ -421,7 +421,7 @@ namespace Mavidian.DataConveyer.Intake
       /// <summary>
       /// Asynchronously read a single line from intake
       /// </summary>
-      /// <returns>A tuple consisting of the line sequence number (1-based), source number (1-based) and the line read from intake; or null as EOF mark</returns>
+      /// <returns>A tuple consisting of the line sequence number (1-based), source number (1-based) and the line read from intake; or null as EOD mark</returns>
       internal async Task<Tuple<int, int, ExternalLine>> GetLineFromIntakeAsync()
       {
          // TBD: Intake is from either text file(s) or IntakeSupplier function
@@ -436,7 +436,7 @@ namespace Mavidian.DataConveyer.Intake
          }
          while (linePlus != null && linePlus.Item1 == null);  // ignore tuples with null lines (which in case of async _intakeFromFile denote end of each file)
 
-         if (linePlus == null) return null;  // EOF
+         if (linePlus == null) return null;  // EOD mark
 
          var lineCnt = Interlocked.Increment(ref _lineCnt);  // adjustment for header row(s) may be needed
 

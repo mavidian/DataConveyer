@@ -97,7 +97,7 @@ namespace Mavidian.DataConveyer.Intake
 
       /// <summary>
       /// Return sequence of tasks with all text lines (accompanied by source numbers) for a given feeder.
-      /// The sequence has an extra EOF element (null) at end.
+      /// The sequence has an extra EOD element (null) at end.
       /// </summary>
       /// <param name="feeder"></param>
       /// <returns></returns>
@@ -110,8 +110,8 @@ namespace Mavidian.DataConveyer.Intake
             //Note that yield cannot be combined with await (hence we need the feeder to return the entire value to be returned, i.e. the tuple).
             //For this reason, the Task returned from GetNextLineAsync (unlike return value from synchronous GetNextLine) provides no clue
             // as to whether it was the last value (null) or not; this can only be determined after the async call completes, i.e.
-            // after the tasks's result becomes available. Therefore, the sequence returned by this method contains the EOF mark (tuple with null),
-            // which is unlike the "synchronous" GetAllLines method (which removes the EOF mark that terminates the sequence).
+            // after the tasks's result becomes available. Therefore, the sequence returned by this method contains the EOD mark (tuple with null),
+            // which is unlike the "synchronous" GetAllLines method (which removes the EOD mark that terminates the sequence).
             //Note that the Result below will not block (as long as the consumer of this method processes the task result before requesting next item). 
             if (linePlus.Result.Item1 == null) yield break;
             //Also note that System.Interactive.Async (Ix Async) package might be helpful in elimination of sending the tuples containing nulls.

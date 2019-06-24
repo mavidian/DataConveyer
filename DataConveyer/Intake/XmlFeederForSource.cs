@@ -37,9 +37,10 @@ namespace Mavidian.DataConveyer.Intake
       {
          BeforeCollection,
          AtCollectionOutOfCluster,  //only if _observeClusters, i.e. ClusterNode is specified
-         AtCollectionInCluster,
+         AtCollectionInCluster,     //if !_observeClusters, it simply means "inside collection", i.e. ready for the record
          AfterCollection
       }
+      //TODO: consider refactoring ReaderState.AtCollectionOutOfCluster, which (as explained in comments) below may also mean AfterCollection.
 
       private readonly XmlReader _xmlReader;
 
@@ -50,7 +51,7 @@ namespace Mavidian.DataConveyer.Intake
       private readonly bool _addPrefixToAttrKeys;  // only relevant when _includeAttributes is true
       private readonly bool _observeClusters;  //true if non-empty ClusterNode setting is present
 
-      private int _currClstrCnt;  //cluster counter/number (0=undetermined)
+      private int _currClstrCnt;  //cluster counter/number (0=undetermined); always 0 unless _observeClusters
       private ReaderState _readerState;
 
       private int _clstrBaseDepth, _recBaseDepth; //level limit when advancing to cluster/record node (i.e. level below collection/cluster node respectively)
@@ -144,6 +145,9 @@ namespace Mavidian.DataConveyer.Intake
          if (_readerState == ReaderState.AtCollectionInCluster)
          {
             if (!AdvanceToLocation(_xrecNodePath, _recBaseDepth)) _readerState = !_observeClusters || _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
+            // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after Read() inside AdvanceToLocation returned false (which means no more data);
+            // If this happens (and _observeClusters is true), _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected upon subsequent
+            // Read(), which happens inside the call to GetCurrentXrecord below.
          }
 
          if (_readerState == ReaderState.AtCollectionOutOfCluster)
@@ -159,6 +163,9 @@ namespace Mavidian.DataConveyer.Intake
             if (_readerState == ReaderState.AtCollectionInCluster)
             {
                if (!AdvanceToLocation(_xrecNodePath, _recBaseDepth)) _readerState = _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
+               // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after Read() inside AdvanceToLocation returned false (which means no more data);
+               // If this happens, _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected upon subsequent
+               // Read(), which happens inside the call to GetCurrentXrecord below.
             }
          }
 
@@ -167,7 +174,8 @@ namespace Mavidian.DataConveyer.Intake
 
          //here, we must be either on the element start node or after collection
          Debug.Assert(_readerState == ReaderState.AtCollectionInCluster && _xmlReader.IsStartElement() && _xmlReader.Name == _xrecNodePath.NodeDefs.Last().Name
-                   || _readerState == ReaderState.AfterCollection);
+                   || _readerState == ReaderState.AfterCollection
+                   || _readerState == ReaderState.AtCollectionOutOfCluster && _xmlReader.Depth == 0); //this last option is really AfterCollection, where Read() returned false, but EOF is not (yet) true (can happen in case of underlying memory stream)
 
          return _readerState == ReaderState.AfterCollection ? null : GetCurrentXrecord();
       }
@@ -188,7 +196,7 @@ namespace Mavidian.DataConveyer.Intake
       /// <returns></returns>
       private int CurrentElementDepth()
       {
-         //The function is intended to be called after a search for an element node; it's result is 
+         //The function is intended to be called after a search for an element node; its result is 
          // meaningful after a successful searach, i.e. the call to AdvanceToLocation that returned true.
          var retVal =_xmlReader.Depth;
          //In case the pattern searched contained attributes, the successful match will be at attribute
@@ -286,21 +294,26 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
-      /// Create record from the nodes inside current node
+      /// Create record from the nodes inside current node.
       /// </summary>
-      /// <returns>Record created</returns>
+      /// <returns>Record created (or null if no current record, i.e. EOF).</returns>
       private Xrecord GetCurrentXrecord()
       {
+         //In spite of checking _xmlReader.EOF before calling this method, a possibility exists that this method is called after the last XML node.
+         //This happens if there a memory stream underneath xmlReader.
+
          _xmlReader.MoveToContent(); //likely not needed, but added to assure same behavior in Debug and Release (note IsStartElement in Debug.Assert that makes a call to MoveToContent)
 
-         //_xmlReader is expected here at the starting element node
-         Debug.Assert(_xmlReader.IsStartElement());
+         //_xmlReader is expected here at the start element or (rarely) at end of data
+         Debug.Assert(_xmlReader.IsStartElement() || _xmlReader.Depth == 0);
 
          var xrecordItems = new List<Tuple<string, object>>();
          var elemDepth = _xmlReader.Depth;
 
          //Add record items from inner elements
          var explicitText = AddXrecordItems(xrecordItems, elemDepth, string.Empty);  //this will add items to xrecordItems
+
+         if (explicitText == null) return null; //means no current record, i.e. EOF
 
          if (_includeExplicitText && !string.IsNullOrWhiteSpace(explicitText))
          {  // add a text placed directly in the record element node (this is not typically expected)
@@ -317,14 +330,17 @@ namespace Mavidian.DataConveyer.Intake
       /// <param name="itemsSoFar">List of record items to add new items to.</param>
       /// <param name="elemDepth">Depth (level) of the element.</param>
       /// <param name="keySoFar">Name prefix "accumulated" so far, empty except for nested items, i.e. recursive call where higher level item keys are prefixed with a . separator, e.g. Name.Last</param>
-      /// <returns>Text (accumulated) of the current node.</returns>
+      /// <returns>Text (accumulated) of the current node (or null if no current node, i.e. EOF).</returns>
       private string AddXrecordItems(List<Tuple<string, object>> itemsSoFar, int elemDepth, string keySoFar)
       {
          //Add record items from attributes
          GetAttributes(keySoFar).ToList().ForEach(a => itemsSoFar.Add(a));
 
          _xmlReader.MoveToContent();
-         Debug.Assert(_xmlReader.IsStartElement());  //each recursive call must be at the element node
+
+         //_xmlReader is expected here at the start element or (rarely) at end of data
+         Debug.Assert(_xmlReader.IsStartElement() || _xmlReader.Depth == 0);  //each recursive call must be at the element node (or rarely this method may be called at EOF)
+
          string retVal = string.Empty; //to be returned (to the higher/outer recursive level)
          string innerVal = null;  //to be obtained from the lower recursive level
 
@@ -354,7 +370,10 @@ namespace Mavidian.DataConveyer.Intake
             }
          }
 
-         return retVal;
+         //It's possible that EOF was not detected until execution of Read in this method above (the reason is that XmlReader based on memory stream
+         // can have Read return false, but no EOF until the next attempt to call Read).
+         //So, we're returning null to indicate that there is no current record.
+         return _xmlReader.EOF ? null : retVal;
       }
 
 

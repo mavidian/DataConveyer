@@ -1154,7 +1154,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <item><see cref="DeferTransformation.Indefinitely"/> - restricted for use in specialized tests only!</item>
       /// </list>
       /// Note that after all records are read, the Intake phase still continues execution by executing record clustering. However, during the clustering process Data Conveyer has
-      /// no ability totrigger the start of the Transformation phase. Similarly, the <see cref="ClusterMarker"/> function (unlike the <see cref="RecordInitiator"/> function ) has no ability 
+      /// no ability to trigger the start of the Transformation phase. Similarly, the <see cref="ClusterMarker"/> function (unlike the <see cref="RecordInitiator"/> function ) has no ability 
       /// to set the trace bin contents.
       /// </summary>
       public DeferTransformation DeferTransformation { get; set; }

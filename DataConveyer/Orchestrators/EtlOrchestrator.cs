@@ -1000,7 +1000,7 @@ namespace Mavidian.DataConveyer.Orchestrators
             //RecordInitiator has 2 objectives: set the trace bin and start transform (if DeferTransformation.UntilRecordInitiation).
             //RecordInitiator is called only when custom RecordInitiator is present (performance).
             //RecordInitiator's return value is respected only if DeferTransformation is set to UntilRecordInitiation.
-            // (note that if DeferTransformation.T UntilRecordInitiation, but no custom initiator, then transform starts after the 1st record).
+            // (note that if DeferTransformation.UntilRecordInitiation, but no custom initiator, then transform starts after the 1st record).
             bool releaseTransform;
             if (_config.RecordInitiator == OrchestratorConfig.DefaultRecordInitiator)
             {  //no RecordInitiator provided; don't bother calling default RecordInitiator

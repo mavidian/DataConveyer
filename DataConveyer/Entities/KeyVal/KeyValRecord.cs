@@ -106,7 +106,9 @@ namespace Mavidian.DataConveyer.Entities.KeyVal
                      _config.Logger.LogError(() => msgOnDemand() + "Record has been excluded from processing.");
                      return;
                   case ActionOnDuplicateKey.AssignDefaultKey:
-                     throw new NotImplementedException("Feature to provide substitutes for duplicate keys has not been implemented.");
+                     var errMsg = "Feature to provide substitutes for duplicate keys (ActionOnDuplicateKey.AssignDefaultKey) has not been implemented.";
+                     _config.Logger.LogError(() => msgOnDemand() + errMsg);
+                     throw new NotImplementedException(errMsg);
                      //TODO: Implement this feature - note that any "default" value can also already exist
                };
             }

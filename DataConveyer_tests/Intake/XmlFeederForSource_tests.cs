@@ -254,38 +254,42 @@ namespace DataConveyer_tests.Intake
          _testDataRepo.Add("Members_1c", Tuple.Create(
 //inputXML:
 @"<?xml version=""1.0"" encoding=""UTF-8"" ?>
+<FakeRoot>blah</FakeRoot>
+<FakeRoot2 />
 <Root>
-	<Distractor0/>
-	<Distractor1></Distractor1>
-	<Distractor2 a=""B"" c=""D"">blah</Distractor2>
+  <Distractor0/>
+  <Distractor1></Distractor1>
+  <Distractor2 a=""B"" c=""D"">blah</Distractor2>
   <Distractor2a/>
-	<Members>
-		<Member>
-			<ID>1</ID>
-			<FName>Paul</FName>
-			<LName>Smith</LName>
-			<DOB>1/12/1988</DOB>
-		</Member>
-		<Member>
-			<ID>2</ID>
-			<FName>John</FName>
-			<LName>Green</LName>
-			<DOB>8/23/1967</DOB>
-		</Member>
-		<Distractor3>blah3</Distractor3>
-		<Member>
-			<ID>3</ID>
-			<FName>Joseph</FName>
-			<LName>Doe</LName>
-			<DOB>11/6/1994</DOB>
-		</Member>
-	</Members>
-	<Distractor4>blah4</Distractor4>
-	<Members>
-  	<Distractor5>blah5</Distractor5>
-		<Member>This contents will be ignored.</Member>
-	</Members>
-  	<Distractor6>blah6</Distractor6>
+  <Members>
+    <Distractor3/>
+    <Distractor3>blah3</Distractor3>
+    <Member>
+      <ID>1</ID>
+      <FName>Paul</FName>
+      <LName>Smith</LName>
+      <DOB>1/12/1988</DOB>
+    </Member>
+    <Member>
+      <ID>2</ID>
+      <FName>John</FName>
+      <LName>Green</LName>
+      <DOB>8/23/1967</DOB>
+    </Member>
+    <Distractor3a>blah3a</Distractor3a>
+    <Member>
+      <ID>3</ID>
+      <FName>Joseph</FName>
+      <LName>Doe</LName>
+      <DOB>11/6/1994</DOB>
+    </Member>
+  </Members>
+  <Distractor4>blah4</Distractor4>
+  <Members>
+    <Distractor5>blah5</Distractor5>
+    <Member>This contents will be ignored.</Member>
+  </Members>
+  <Distractor6>blah6</Distractor6>
 </Root>",
              //settings:
              "CollectionNode|Root/Members,RecordNode|Member",

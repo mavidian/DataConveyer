@@ -90,7 +90,7 @@ namespace Mavidian.DataConveyer.Intake
          _xrecNodePath = new XmlNodePath(settingDict.GetStringSetting("RecordNode"));
          _includeExplicitText = settingDict.GetStringSetting("IncludeExplicitText")?.ToLower() == "true";
          var inclAttrsSetting = settingDict.GetStringSetting("IncludeAttributes")?.ToLower();
-         _includeAttributes = inclAttrsSetting.SafeSubstring(0,4) == "true";
+         _includeAttributes = inclAttrsSetting.SafeSubstring(0, 4) == "true";
          _addPrefixToAttrKeys = inclAttrsSetting != "trueplain";
          _observeClusters = !_clstrNodePath.IsEmpty;
 
@@ -124,18 +124,18 @@ namespace Mavidian.DataConveyer.Intake
          if (_readerState == ReaderState.BeforeCollection)
          { //at first, reader needs to be placed inside the collection of records to be extracted (note that only a single collection is considered)
             var atCollection = true;
-            if (!_collNodePath.IsEmpty) atCollection = AdvanceToLocation(_collNodePath, 0);
+            if (!_collNodePath.IsEmpty) atCollection = AdvanceToLocation(_collNodePath, -1);  // base level is one level above root, i.e. -1
             if (atCollection)
             {
                if (_observeClusters)
                {
                   _readerState = ReaderState.AtCollectionOutOfCluster;
-                  _clstrBaseDepth = CurrentElementDepth();
+                  _clstrBaseDepth = _collNodePath.IsEmpty ? -1 : CurrentElementDepth();  //if no collection node, then one level above root, i.e. -1
                }
                else
                {
                   _readerState = ReaderState.AtCollectionInCluster;
-                  _recBaseDepth = CurrentElementDepth();
+                  _recBaseDepth = _collNodePath.IsEmpty ? -1 : CurrentElementDepth();  //if no collection node, then one level above root, i.e. -1
                }
             }
             else _readerState = ReaderState.AfterCollection;
@@ -162,7 +162,8 @@ namespace Mavidian.DataConveyer.Intake
                         || _readerState == ReaderState.AfterCollection);
             if (_readerState == ReaderState.AtCollectionInCluster)
             {
-               if (!AdvanceToLocation(_xrecNodePath, _recBaseDepth)) _readerState = _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
+               //We're marking here the first call to AdvaneToLocation for a cluster (last parm firsInCluster=true) - this is complicated/unreliable and may need to be refactored
+               if (!AdvanceToLocation(_xrecNodePath, _recBaseDepth, -9, null, true)) _readerState = _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
                // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after Read() inside AdvanceToLocation returned false (which means no more data);
                // If this happens, _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected upon subsequent
                // Read(), which happens inside the call to GetCurrentXrecord below.
@@ -198,7 +199,7 @@ namespace Mavidian.DataConveyer.Intake
       {
          //The function is intended to be called after a search for an element node; its result is 
          // meaningful after a successful searach, i.e. the call to AdvanceToLocation that returned true.
-         var retVal =_xmlReader.Depth;
+         var retVal = _xmlReader.Depth;
          //In case the pattern searched contained attributes, the successful match will be at attribute
          //, which is 1 level deeper than the matched element. Hence, if so, 1 needs to be subtracted.
          if (_xmlReader.NodeType == XmlNodeType.Attribute) retVal--;
@@ -207,24 +208,20 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
-      /// Read _xmlReader until at given location
+      /// Read _xmlReader until at given location.
       /// </summary>
       /// <param name="nodePath">Location path relative to current position.</param>
       /// <param name="baseDepth">Level (Depth) passed at the initial call to limit the scope of search for inner elements.</param>
       /// <param name="depth">Level (Depth) of the initial call this method (intended to only be passed during recursive calls).</param>
       /// <param name="initPath">Location path from the initial call this method (intended to only be passed during recursive calls - needed in case of reset).</param>
+      /// <param name="firstInCluster">Indicator that the record is first in cluster (complicated/unreliable - to be refactored).</param>
       /// <returns>True if succeeded; false if location not found</returns>
-      private bool AdvanceToLocation(XmlNodePath nodePath, int baseDepth, int depth = -1, XmlNodePath initPath = null)
+      private bool AdvanceToLocation(XmlNodePath nodePath, int baseDepth, int depth = -9, XmlNodePath initPath = null, bool firstInCluster = false)
       {
          Debug.Assert(!nodePath.IsEmpty);
 
-         //Distinction between initial level and base level :
-         // initDepth - level at the beginning of initial (external) call (then passed with each recursive iteration)
-         // baseDepth - level limit when advancing to next element (e.g. if advancing to cluster, it is the collection level) 
-         //Always: initDepth >= baseDepth (i.e. each call is made within level limit)
-
-         int initDepth = depth == -1 ? _xmlReader.Depth : depth;  //-1 means initial call from outside (as opposed to recursive call)
          if (initPath == null) initPath = nodePath;
+
          var head = nodePath.NodeDefs[0];      //XmlNodeDef representing the first xpath fragment (before the first /), i.e. current node pattern
          var tail = nodePath.NodeDefs.Skip(1).Any() ? new XmlNodePath(nodePath.NodeDefs.Skip(1))  //XmlNodePath representing the xpath fragments after the first /, i.e. the remaining node patterns
                                                     : null;  //end of recursion
@@ -233,19 +230,31 @@ namespace Mavidian.DataConveyer.Intake
          while (_xmlReader.Read() && !_xmlReader.IsStartElement() && _xmlReader.Depth > baseDepth);
          if (_xmlReader.EOF) return false;
 
+         //Distinction between initial level and base level :
+         // initDepth - level at the beginning of initial (external) call (then passed with each recursive iteration)
+         // baseDepth - level limit when advancing to next element (e.g. if advancing to cluster, it is the collection level) 
+         //Always: initDepth >= baseDepth (i.e. each call is made within level limit)
+
+         int initDepth = depth == -9 ? _xmlReader.Depth : depth;  //-9 means initial call from outside (as opposed to recursive call)
+
          if (MatchFound(head))
          {
-            initDepth = _xmlReader.Depth + 1; //only first match counts; next level is the level to return to in case of failure at deeper level
-            initPath = tail;                 //the location to return to in case of future failure
+            initDepth++;
             //are we there yet?
-            if (tail == null || AdvanceToLocation(tail, baseDepth, initDepth, initPath)) return true; //success!
+            if (tail == null || AdvanceToLocation(tail, baseDepth, initDepth, tail)) return true; //success!
          }
 
          //no match here, attempt to go back to the initial level and start over
          do
          {
             if (_xmlReader.Depth < initDepth) return false;  //beyond the initial level
-            if (_xmlReader.Depth == initDepth) return AdvanceToLocation(initPath, baseDepth);  //at initial level, try again
+
+            if (_xmlReader.Depth == initDepth)
+            { //at initial level, try again (or fail search if first in cluster)
+               if (_xmlReader.NodeType == XmlNodeType.EndElement && !firstInCluster) return false;
+               //TODO: refactor (remove reliance on firstInCluster) - too complicated.
+               return AdvanceToLocation(initPath, baseDepth);
+            }
          } while (_xmlReader.Read());
 
          //end of stream, no xpath found
@@ -382,7 +391,7 @@ namespace Mavidian.DataConveyer.Intake
       /// </summary>
       /// <param name="keySoFar">The key created from outer nodes.</param>
       /// <returns>A (possibly empty) sequence of items created from current node.</returns>
-      private IEnumerable<Tuple<string,object>> GetAttributes(string keySoFar)
+      private IEnumerable<Tuple<string, object>> GetAttributes(string keySoFar)
       {
          if (_xmlReader.HasAttributes)
          {
@@ -413,3 +422,4 @@ namespace Mavidian.DataConveyer.Intake
       private string CreateKey(string keySoFar) => CreateKey(keySoFar, false);  //this overload applies to element nodes (also to attributes if _addPrefixToAttrKeys is false)
    }
 }
+

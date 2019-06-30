@@ -9,7 +9,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIconUrl>http://www.mavidian.com/files/MavLogo_15_64_64_t.png</PackageIconUrl>
-    <PackageReleaseNotes>Refine XML parsing by adding IncludeAttributes token to XmlJsonIntakeSettings configuration setting.</PackageReleaseNotes>
+    <PackageReleaseNotes>Refinements to XML parsing.</PackageReleaseNotes>
     <PackageTags>data parser scrubber transformer router formatter etl migration dataflow</PackageTags>
     <PackageProjectUrl>http://www.dataconveyer.com</PackageProjectUrl>
     <SignAssembly>true</SignAssembly>

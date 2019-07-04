@@ -51,6 +51,10 @@ namespace Mavidian.DataConveyer.Intake
       private readonly bool _addPrefixToAttrKeys;  // only relevant when _includeAttributes is true
       private readonly bool _observeClusters;  //true if non-empty ClusterNode setting is present
 
+      private readonly bool _addClusterDataToTraceBin;
+      private IDictionary<string, object> _traceBin;
+      private string _traceBinKeyPrefix;
+
       private int _currClstrCnt;  //cluster counter/number (0=undetermined); always 0 unless _observeClusters
       private ReaderState _readerState;
 
@@ -93,6 +97,7 @@ namespace Mavidian.DataConveyer.Intake
          _includeAttributes = inclAttrsSetting.SafeSubstring(0, 4) == "true";
          _addPrefixToAttrKeys = inclAttrsSetting != "trueplain";
          _observeClusters = !_clstrNodePath.IsEmpty;
+         _addClusterDataToTraceBin = settingDict.GetStringSetting("AddClusterDataToTraceBin")?.ToLower() == "true";
 
          _currClstrCnt = 0; //will stay at 0 (undetermined) unless ClusterNode defined
          _readerState = ReaderState.BeforeCollection;
@@ -155,7 +160,12 @@ namespace Mavidian.DataConveyer.Intake
            //here, we must be in _observeClusters mode and either at start or after completing a cluster
             Debug.Assert(_observeClusters);
             _currClstrCnt++;
-            _readerState = AdvanceToLocation(_clstrNodePath, _clstrBaseDepth) ? ReaderState.AtCollectionInCluster : ReaderState.AfterCollection;
+            if (_addClusterDataToTraceBin)
+            {
+               _traceBin = new Dictionary<string, object>();
+               _traceBinKeyPrefix = string.Empty;
+            }
+            _readerState = AdvanceToLocation(_clstrNodePath, _clstrBaseDepth, -9, null, false, _addClusterDataToTraceBin) ? ReaderState.AtCollectionInCluster : ReaderState.AfterCollection;
             _recBaseDepth = CurrentElementDepth();
             _xmlReader.MoveToContent();
             Debug.Assert(_readerState == ReaderState.AtCollectionInCluster && _xmlReader.IsStartElement() && _xmlReader.Name == _clstrNodePath.NodeDefs.Last().Name
@@ -215,8 +225,9 @@ namespace Mavidian.DataConveyer.Intake
       /// <param name="depth">Level (Depth) of the initial call this method (intended to only be passed during recursive calls).</param>
       /// <param name="initPath">Location path from the initial call this method (intended to only be passed during recursive calls - needed in case of reset).</param>
       /// <param name="firstInCluster">Indicator that the record is first in cluster (complicated/unreliable - to be refactored).</param>
+      /// <param name="addAttrsToTraceBin">Indicator to add collected attribute data to trace bin; applicable only if AddClusterDataToTraceBin (which in turn is only applicable if _observeClusters).</param>
       /// <returns>True if succeeded; false if location not found</returns>
-      private bool AdvanceToLocation(XmlNodePath nodePath, int baseDepth, int depth = -9, XmlNodePath initPath = null, bool firstInCluster = false)
+      private bool AdvanceToLocation(XmlNodePath nodePath, int baseDepth, int depth = -9, XmlNodePath initPath = null, bool firstInCluster = false, bool addAttrsToTraceBin = false)
       {
          Debug.Assert(!nodePath.IsEmpty);
 
@@ -239,9 +250,14 @@ namespace Mavidian.DataConveyer.Intake
 
          if (MatchFound(head))
          {
+            if (addAttrsToTraceBin)
+            {
+               _traceBinKeyPrefix = CreateKey(_traceBinKeyPrefix);
+               GetAttributes(_traceBinKeyPrefix, false).ToList().ForEach(t => _traceBin.Add(t.Item1, t.Item2));
+            }
             initDepth++;
             //are we there yet?
-            if (tail == null || AdvanceToLocation(tail, baseDepth, initDepth, tail)) return true; //success!
+            if (tail == null || AdvanceToLocation(tail, baseDepth, initDepth, tail, false, addAttrsToTraceBin)) return true; //success!
          }
 
          //no match here, attempt to go back to the initial level and start over
@@ -329,7 +345,7 @@ namespace Mavidian.DataConveyer.Intake
             xrecordItems.Add(Tuple.Create("__explicitText__", explicitText as object));
          }
 
-         return new Xrecord(xrecordItems, _currClstrCnt);
+         return new Xrecord(xrecordItems, _currClstrCnt, _traceBin);
       }
 
 
@@ -343,7 +359,7 @@ namespace Mavidian.DataConveyer.Intake
       private string AddXrecordItems(List<Tuple<string, object>> itemsSoFar, int elemDepth, string keySoFar)
       {
          //Add record items from attributes
-         GetAttributes(keySoFar).ToList().ForEach(a => itemsSoFar.Add(a));
+         if (_includeAttributes) GetAttributes(keySoFar, _addPrefixToAttrKeys).ToList().ForEach(a => itemsSoFar.Add(a));
 
          _xmlReader.MoveToContent();
 
@@ -360,7 +376,7 @@ namespace Mavidian.DataConveyer.Intake
             if (_xmlReader.IsEmptyElement)
             { // special case (e.g. <Empty/>), will not be followed by the end element; add item immediately (but first, add attributes if any)
                var currentKey = CreateKey(keySoFar);
-               GetAttributes(currentKey).ToList().ForEach(a => itemsSoFar.Add(a));
+               if (_includeAttributes) GetAttributes(currentKey, _addPrefixToAttrKeys).ToList().ForEach(a => itemsSoFar.Add(a));
                itemsSoFar.Add(Tuple.Create(currentKey, string.Empty as object));
                continue;
             }
@@ -387,21 +403,19 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
-      /// Read attributes of the current mode and (if _includeAttributes is true) create corresponding items.
+      /// Read attributes of the current node and create corresponding items.
       /// </summary>
       /// <param name="keySoFar">The key created from outer nodes.</param>
+      /// <param name="prependAtSign">true = prepend name with @; false otherwise.</param>
       /// <returns>A (possibly empty) sequence of items created from current node.</returns>
-      private IEnumerable<Tuple<string, object>> GetAttributes(string keySoFar)
+      private IEnumerable<Tuple<string, object>> GetAttributes(string keySoFar, bool prependAtSign)
       {
          if (_xmlReader.HasAttributes)
          {
             while (_xmlReader.MoveToNextAttribute())
             {
-               if (_includeAttributes)
-               {
-                  var attrKey = CreateKey(keySoFar, _addPrefixToAttrKeys);  //keys created out of attribute names are prefixed with @ (unless _addPrefixToAttrKeys is false)
-                  yield return Tuple.Create(attrKey, _xmlReader.Value as object);  //note that XML values (unlike JSON values) are always of string type
-               }
+               var attrKey = CreateKey(keySoFar, prependAtSign);  //keys created out of attribute names are prefixed with @ (unless _addPrefixToAttrKeys is false)
+               yield return Tuple.Create(attrKey, _xmlReader.Value as object);  //note that XML values (unlike JSON values) are always of string type
             }
          }
          yield break;
@@ -422,4 +436,3 @@ namespace Mavidian.DataConveyer.Intake
       private string CreateKey(string keySoFar) => CreateKey(keySoFar, false);  //this overload applies to element nodes (also to attributes if _addPrefixToAttrKeys is false)
    }
 }
-

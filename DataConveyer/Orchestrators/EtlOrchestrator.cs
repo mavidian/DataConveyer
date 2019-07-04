@@ -976,7 +976,7 @@ namespace Mavidian.DataConveyer.Orchestrators
                   throw;
                }
                return (itm == null) ? Enumerable.Empty<IItem>() : new IItem[] { itm };
-            }), tpl.Item1, tpl.Item2, tpl.Item3.ClstrNo, _globalCache, null, null, _typeDefinitions, _config, ProcessingStatusSupplier, _config.ActionOnDuplicateKey);
+            }), tpl.Item1, tpl.Item2, tpl.Item3.ClstrNo, _globalCache, recordLine.TraceBin, null, _typeDefinitions, _config, ProcessingStatusSupplier, _config.ActionOnDuplicateKey);
 
          }
 

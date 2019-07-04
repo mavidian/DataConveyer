@@ -80,10 +80,19 @@ namespace Mavidian.DataConveyer.Common
 
       /// <summary>
       /// Cluster number. Only meaningful in case of <see cref="Xrecord"/> subclass; otherwise 0.
+      /// Note that this number is not the same as the <see cref="Entities.KeyVal.IRecordBase.ClstrNo"/> of the actual record (<see cref="Entities.KeyVal.IRecord"/>).
       /// </summary>
       public virtual int ClstrNo
       {
-         get { return 0;  }  // in case of Xrecord subclass, it may be assigned based on structure of intake records
+         get { return 0; }  // in case of Xrecord subclass, it may be assigned based on structure of intake records
+      }
+
+      /// <summary>
+      /// Initial trace bin contents that may be obtained from XML nodes that represent clusters. Only meaningful in case of <see cref="Xrecord"/> subclass; otherwise null.
+      /// </summary>
+      public virtual IReadOnlyDictionary<string, object> TraceBin
+      {
+         get { return null; }  // in case of Xrecord subclass, it may be assigned based on structure of intake records
       }
 
       /// <summary>
@@ -147,24 +156,35 @@ namespace Mavidian.DataConveyer.Common
    {
       private readonly int _clstrNo;
       private readonly IReadOnlyList<Tuple<string, object>> _items;
+      private readonly IReadOnlyDictionary<string, object> _traceBin;
       /// <summary>
       /// Cluster number associated with the record; 0 means undetermined.
+      /// Data Conveyer assigns this number based on the ClusterNode value of the <see cref="Orchestrators.OrchestratorConfig.XmlJsonIntakeSettings"/> setting.
+      /// This number is assigned sequentially, separately for each source.
+      /// The <see cref="ClstrNo"/> is intended for evaluation (together with <see cref="Entities.KeyVal.IRecordBase.SourceNo"/>) by the <see cref="Orchestrators.OrchestratorConfig.ClusterMarker"/> function,
+      /// which controls determination of the <see cref="Entities.KeyVal.IRecordBase.ClstrNo"/> of the record (<see cref="Entities.KeyVal.IRecord"/>) on intake.
       /// </summary>
       public override int ClstrNo { get { return _clstrNo; } }  //cluster counter/number (0 - undetermined)
+      /// <summary>
+      /// Initial trace bin contents that may be obtained from XML nodes that represent clusters.
+      /// </summary>
+      public override IReadOnlyDictionary<string, object> TraceBin { get { return _traceBin; } }
       /// <summary>
       /// A sequence of key-value pairs, each pair defining a single element (field) of the record; both key and value are strings.
       /// </summary>
       public override IReadOnlyList<Tuple<string, object>> Items { get { return _items; } }  //key-value pairs; alternatively KeyValuePair<string,object> (struct and not class) could be used
       /// <summary>
-      /// First item in a form key=value
+      /// First item in a form key=value.
       /// </summary>
       public override string Excerpt { get { return _items.Any() ? $"{_items[0].Item1}={_items[0].Item2}" : "<<empty>>"; } }
-      internal Xrecord(List<Tuple<string, object>> items, int clstrNo)
+      internal Xrecord(List<Tuple<string, object>> items, int clstrNo, IDictionary<string, object> traceBin)
       {
          _clstrNo = clstrNo;
          _items = items;
+         _traceBin = (IReadOnlyDictionary<string, object>)traceBin;
          Type = ExternalLineType.Xrecord;
       }
+      internal Xrecord(List<Tuple<string, object>> items, int clstrNo) : this(items, clstrNo, null) { }
       internal Xrecord(List<Tuple<string, object>> items) : this(items, 0) { }
    }
 }

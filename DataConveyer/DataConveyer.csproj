@@ -9,7 +9,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIconUrl>http://www.mavidian.com/files/MavLogo_15_64_64_t.png</PackageIconUrl>
-    <PackageReleaseNotes>Refinements to XML parsing.</PackageReleaseNotes>
+    <PackageReleaseNotes>Ability to add XML cluster data in trace bin.</PackageReleaseNotes>
     <PackageTags>data parser scrubber transformer router formatter etl migration dataflow</PackageTags>
     <PackageProjectUrl>http://www.dataconveyer.com</PackageProjectUrl>
     <SignAssembly>true</SignAssembly>

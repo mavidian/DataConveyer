@@ -1114,6 +1114,17 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///       In the latter case, name conflicts are possible between items originating from attributes and inner nodes. 
       ///     </description>
       ///   </item>
+      ///   <item>
+      ///     <term>AddClusterDataToTraceBin</term>
+      ///     <description>
+      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. Also ignored if ClusterNode value is absent.
+      ///       true to include attributes of the cluster node(s) as key value pairs in the trace bins attached to the records of the cluster.
+      ///       false to exclude cluster data from intake processing.
+      ///       The keys of the elements placed in the trace bin reflect nodes traversed to reach the cluster node (including the attribute node itself)
+      ///       separated by periods. For example, if ClusterNode value is Region/State and the actual nodes contain &lt;Region name="East"&gt;&lt;State abbrev="NJ"&gt;...,
+      ///       then there will be 2 elements placed in the trace bin with keys of Region.name and Region.State.abbrev and the corresponding values of East and NJ.
+      ///     </description>
+      ///   </item>
       /// </list>
       /// <note type="note">
       /// <para>

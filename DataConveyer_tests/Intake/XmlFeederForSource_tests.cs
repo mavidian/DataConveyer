@@ -1099,8 +1099,6 @@ namespace DataConveyer_tests.Intake
          var dummySourceNo = 6;
          var xrecordSupplier = new XmlFeederForSource(new StringReader(inputXML), dummySourceNo, settings, false);
          var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
-         var actual = new List<Xrecord>();
-         var expected = testData.Item3;
 
          //act
          xrecordSupplier.ReadToEnd();

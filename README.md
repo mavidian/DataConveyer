@@ -62,7 +62,7 @@ if (rslt.CompletionStatus == CompletionStatus.IntakeDepleted)
 }
 ```
 
-For additional examples on using Data&nbsp;Conveyer, please examine the [Data&nbsp;Conveyer tutorial](http://www.mavidian.com/dataconveyer-tutorial.html) or the Data&nbsp;Conveyer Primer section of the [Data&nbsp;Conveyer Help portal][help_ref].
+For additional examples on using Data&nbsp;Conveyer, please examine the [Data&nbsp;Conveyer tutorial](http://www.mavidian.com/dataconveyer/tutorial/) or the Data&nbsp;Conveyer Primer section of the [Data&nbsp;Conveyer Help portal][help_ref].
 
 ## Notes on the solution structure
 

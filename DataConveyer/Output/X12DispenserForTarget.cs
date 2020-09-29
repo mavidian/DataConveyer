@@ -65,7 +65,7 @@ namespace Mavidian.DataConveyer.Output
       {
          Debug.Assert(linePlus.Item2 == TargetNo);  //note that LineDispenserForTarget class could've just been sent ExternalLine (and not the Tuple with TargetNo), but it's kept for consistency/duality with LineFeederForSource
          //TODO: Verify that line contains no segment delimiter (if it does, log error)
-         await _writer.WriteAsync(linePlus.Item1?.Text + _x12SegmentDelimiter);
+         await _writer.WriteAsync(linePlus.Item1?.Text + _x12SegmentDelimiter.Value);
       }
 
    }

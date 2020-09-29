@@ -53,8 +53,7 @@ namespace Mavidian.DataConveyer.Intake
 
       public override async Task<Tuple<ExternalLine, int>> GetNextLineAsync()
       {
-         var line = await Task.Run(() => ReadSegment()); //note that ReadSegment uses TextReader.Read to read 1 char at a time (so it makes no sense to create ReadSegmentAsync)
-         return LineAsSegment(line);
+         return LineAsSegment(await ReadSegmentAsync());
       }
 
 
@@ -66,19 +65,17 @@ namespace Mavidian.DataConveyer.Intake
       {
          List<char> chars = new List<char>();
          bool before1stLetter = true; //to remove leading whitespace (common when CR is segment delimiter and is followed by LF)
-         var curr = _reader.Read();
-         var currChar = (char)curr;
+         var currChar = ReadNextChar();
          int cnt = 1;
          while (currChar != _segmentDelimiterChar)
          {
             if (before1stLetter && char.IsWhiteSpace(currChar))
             {
-               curr = _reader.Read();
-               currChar = (char)curr;
+               currChar = ReadNextChar();
                continue;
             }
             before1stLetter = false;
-            if (curr < 0) return chars.Any() ? new String(chars.ToArray()) : null; //Read returns -1 at end of stream
+            if (currChar == '\0') return chars.Any() ? new String(chars.ToArray()) : null; //end of stream
             chars.Add(currChar);
             if (cnt == 3 && chars[0] == 'I' && chars[1] == 'S' && chars[2] == 'A')
             { //ISA segment encountered, read the remaining 103 characters (ISA has a total of 106), instead to segment delimiter
@@ -87,11 +84,67 @@ namespace Mavidian.DataConveyer.Intake
                chars = chars.Concat(buffer).ToList();
                break;
             }
-            curr = _reader.Read();
-            currChar = (char)curr;
+            currChar = ReadNextChar();
             cnt++;
          }
          return new String(chars.ToArray());
+      }
+
+
+      /// <summary>
+      /// Read next character from text reader
+      /// </summary>
+      /// <returns>Character read or \0 if no more characters are available</returns>
+      private char ReadNextChar()
+      {
+         var curr = _reader.Read();
+         return curr == -1 ? '\0' : (char)curr;
+      }
+
+
+      /// <summary>
+      /// Asynchronously read a "line" based on the given delimiter (applicable to X12 segment)
+      /// </summary>
+      /// <returns></returns>
+      private async Task<string> ReadSegmentAsync()
+      {
+         List<char> chars = new List<char>();
+         bool before1stLetter = true; //to remove leading whitespace (common when CR is segment delimiter and is followed by LF)
+         var currChar = await ReadNextCharAsync();
+         int cnt = 1;
+         while (currChar != _segmentDelimiterChar)
+         {
+            if (before1stLetter && char.IsWhiteSpace(currChar))
+            {
+               currChar = await ReadNextCharAsync();
+               continue;
+            }
+            before1stLetter = false;
+            if (currChar == '\0') return chars.Any() ? new String(chars.ToArray()) : null; //end of stream
+            chars.Add(currChar);
+            if (cnt == 3 && chars[0] == 'I' && chars[1] == 'S' && chars[2] == 'A')
+            { //ISA segment encountered, read the remaining 103 characters (ISA has a total of 106), instead to segment delimiter
+               var buffer = new char[103];
+               await _reader.ReadAsync(buffer, 0, 103);
+               chars = chars.Concat(buffer).ToList();
+               break;
+            }
+            currChar = await ReadNextCharAsync();
+            cnt++;
+         }
+         return new String(chars.ToArray());
+      }
+
+
+      /// <summary>
+      /// Asynchronously read next character from text reader
+      /// </summary>
+      /// <returns>Task with character read or \0 if no more characters are available</returns>
+      private async Task<char> ReadNextCharAsync()
+      {
+         var buffer = new char[1];
+         int n = await _reader.ReadAsync(buffer, 0, 1);
+         return n == 0 ? '\0' : buffer[0];
       }
 
 

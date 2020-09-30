@@ -257,7 +257,7 @@ namespace DataConveyer.Tests.Orchestrators
          logRslt = _fatalLogMsgs[2];
          logRslt.Item1.Should().Be(LogEntrySeverity.Fatal);
          logRslt.Item2.Contains("Attempt to create output file(s) '\\\\BadUNCpath' failed").Should().BeTrue();  //text from OutputProvider class; note escaped backslashes
-         logRslt.Item2.Contains("Exception of type System.IO.IOException occurred: The specified path is invalid : '\\\\BadUNCpath'").Should().BeTrue();
+         logRslt.Item2.Contains("Exception of type System.IO.IOException occurred: The specified path is invalid. : '\\\\BadUNCpath'").Should().BeTrue();
          logRslt.Item3.Exception.Should().BeOfType<IOException>();
       }
 
@@ -288,7 +288,7 @@ namespace DataConveyer.Tests.Orchestrators
          var logRslt = _fatalLogMsgs[1];
          logRslt.Item1.Should().Be(LogEntrySeverity.Fatal);
          logRslt.Item2.Contains("Attempt to create output file(s) '\\\\BadUNCpath' failed").Should().BeTrue();  //text from OutputProvider class; note escaped backslashes
-         logRslt.Item2.Contains("Exception of type System.IO.IOException occurred: The specified path is invalid : '\\\\BadUNCpath'").Should().BeTrue();
+         logRslt.Item2.Contains("Exception of type System.IO.IOException occurred: The specified path is invalid. : '\\\\BadUNCpath'").Should().BeTrue();
          logRslt.Item3.Exception.Should().BeOfType<IOException>();
       }
 

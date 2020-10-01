@@ -248,7 +248,7 @@ namespace Mavidian.DataConveyer.Intake
                //We're marking here the first call to AdvaneToLocation for a cluster (last parm firstInCluster=true) - this is complicated/unreliable and may need to be refactored
                if (!await AdvanceToLocationAsync(_xrecNodePath, _recBaseDepth, -9, null, true)) _readerState = _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
                // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after ReadAsync() inside AdvanceToLocationAsync returned false (which means no more data);
-               // If this happens, _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected inside the call to GetCurrentXrecord below.
+               // If this happens, _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected inside the call to GetCurrentXrecordAsync below.
             }
          }
 
@@ -495,7 +495,7 @@ namespace Mavidian.DataConveyer.Intake
       /// <summary>
       /// Asynchronously create record from the nodes inside current node.
       /// </summary>
-      /// <returns>Record created (or null if no current record, i.e. EOF).</returns>
+      /// <returns>A task with record created (or null if no current record, i.e. EOF).</returns>
       private async Task<Xrecord> GetCurrentXrecordAsync()
       {
          //In spite of checking _xmlReader.EOF before calling this method, a possibility exists that this method is called after the last XML node.
@@ -582,7 +582,7 @@ namespace Mavidian.DataConveyer.Intake
       /// <param name="itemsSoFar">List of record items to add new items to.</param>
       /// <param name="elemDepth">Depth (level) of the element.</param>
       /// <param name="keySoFar">Name prefix "accumulated" so far, empty except for nested items, i.e. recursive call where higher level item keys are prefixed with a . separator, e.g. Name.Last</param>
-      /// <returns>Text (accumulated) of the current node (or null if no current node, i.e. EOF).</returns>
+      /// <returns>A task with text (accumulated) of the current node (or null if no current node, i.e. EOF).</returns>
       private async Task<string> AddXrecordItemsAsync(List<Tuple<string, object>> itemsSoFar, int elemDepth, string keySoFar)
       {
          //Add record items from attributes

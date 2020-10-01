@@ -110,7 +110,7 @@ namespace Mavidian.DataConveyer.Intake
 
       public override async Task<Tuple<ExternalLine, int>> GetNextLineAsync()
       {
-         var line = await Task.Run(() => SupplyNextXrecord()); //TODO: Consider SupplyNextXrecordAsync (with AdvanceToLocationAsync, etc.) to make async "fine-grained"
+         var line = await SupplyNextXrecordAsync();
          return line?.ToTuple(_sourceNo);
       }
 
@@ -122,6 +122,10 @@ namespace Mavidian.DataConveyer.Intake
       }
 
 
+      /// <summary>
+      /// Read enough _jsonReader to determine subsequent record.
+      /// </summary>
+      /// <returns>The next record read.</returns>
       private Xrecord SupplyNextXrecord()
       {
          var advanceResult = AdvanceToTargetPath();
@@ -129,6 +133,20 @@ namespace Mavidian.DataConveyer.Intake
          if (advanceResult == AdvanceResult.MatchInNewCluster) _currClstrCnt++;
 
          return advanceResult == AdvanceResult.EOF ? null : GetCurrentXrecord();
+      }
+
+
+      /// <summary>
+      /// Asynchronously read enough _jsonReader to determine subsequent record.
+      /// </summary>
+      /// <returns>A task with the next record read.</returns>
+      private async Task<Xrecord> SupplyNextXrecordAsync()
+      {
+         var advanceResult = await AdvanceToTargetPathAsync();
+
+         if (advanceResult == AdvanceResult.MatchInNewCluster) _currClstrCnt++;
+
+         return advanceResult == AdvanceResult.EOF ? null : await GetCurrentXrecordAsync();
       }
 
 
@@ -142,6 +160,15 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
+      /// Asynchronously consume the remainder of input stream, swallow its contents and the dispose the input
+      /// </summary>
+      public async void ReadToEndAsync()
+      {
+         while (await _jsonReader.ReadAsync()) { }
+      }
+
+
+      /// <summary>
       /// Read _jsonReader until at adjusted cummulative target path location
       /// </summary>
       /// <returns>Match or MatchInNewCluster if succeeded; EOF if location not found and no more data.</returns>
@@ -151,6 +178,44 @@ namespace Mavidian.DataConveyer.Intake
 
          string lastProp = null;
          while (_jsonReader.Read())
+         {
+            var tokenType = _jsonReader.TokenType;
+
+            if (tokenType == JsonToken.StartObject || tokenType == JsonToken.StartArray)
+            {
+               Debug.Assert(_adjustedPathStack.Count != 0 || lastProp == null);  //beginning object/array in JSON is never preceded by name
+               _adjustedPathStack.Push(_adjustedPathStack.Count == 0 ? string.Empty : NewCumulativeTargetPath(_adjustedPathStack.Peek(), lastProp, tokenType == JsonToken.StartArray));
+            }
+            if (tokenType == JsonToken.EndObject || tokenType == JsonToken.EndArray)
+            {
+               _adjustedPathStack.Pop();
+            }
+
+            if (_observeClusters) minLevel = Math.Min(minLevel, _adjustedPathStack.Count == 0 ? 0 : _adjustedPathStack.Peek().Where(c => c == '/').Count());
+
+            if (IsStartElement(tokenType) && _adjustedPathStack.Peek() == _adjustedCumulativeTargetPath)
+            {  //start of new record found, just verify if we have crossed cluster boundary in the process
+               return _observeClusters && minLevel < _clusterLevel ? AdvanceResult.MatchInNewCluster : AdvanceResult.Match;
+            }
+
+            lastProp = tokenType == JsonToken.PropertyName ? (string)_jsonReader.Value : null;
+         }
+
+         //end of stream
+         return AdvanceResult.EOF;
+      }
+
+
+      /// <summary>
+      /// Asynchronously read _jsonReader until at adjusted cummulative target path location
+      /// </summary>
+      /// <returns>A task with Match or MatchInNewCluster if succeeded; EOF if location not found and no more data.</returns>
+      private async Task<AdvanceResult> AdvanceToTargetPathAsync()
+      {
+         var minLevel = _clusterLevel;  //relevant only if _observeClusters
+
+         string lastProp = null;
+         while (await _jsonReader.ReadAsync())
          {
             var tokenType = _jsonReader.TokenType;
 
@@ -247,6 +312,25 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
+      /// Asynchronously create a record from the nodes inside current node
+      /// </summary>
+      /// <returns>A task with record created</returns>
+      private async Task<Xrecord> GetCurrentXrecordAsync()
+      {
+         //_jsonReader is expected here at the starting element node
+         Debug.Assert(_jsonReader.TokenType == JsonToken.StartObject);
+
+         var xrecordItems = new List<Tuple<string, object>>();
+         var elemDepth = _jsonReader.Depth;
+
+         //Add record items from inner elements
+         await AddXrecordItemsAsync(xrecordItems, elemDepth, string.Empty);  //this will add items to xrecordItems
+
+         return new Xrecord(xrecordItems, _currClstrCnt);
+      }
+
+
+      /// <summary>
       /// Recursive method to add items to a given record
       /// </summary>
       /// <param name="itemsSoFar">List of record items to add new items to</param>
@@ -265,6 +349,48 @@ namespace Mavidian.DataConveyer.Intake
             {
                case JsonToken.StartObject: //recursive call to inner level
                   AddXrecordItems(itemsSoFar, elemDepth + 1, currentKey);
+                  break;
+               case JsonToken.EndObject:
+               case JsonToken.StartArray:  //in case of array, dup keys will be added (to be handled by KeyValRecord ctor)
+               case JsonToken.EndArray:
+                  break;
+               case JsonToken.PropertyName:  //accumulate key (dot notation)
+                  Debug.Assert(_jsonReader.ValueType == typeof(string));
+                  currentKey = string.IsNullOrEmpty(keySoFar) ? (string)_jsonReader.Value : keySoFar + "." + (string)_jsonReader.Value;
+                  break;
+               default:  //must be a data element, e.g. string
+                  itemsSoFar.Add(Tuple.Create(currentKey, _jsonReader.Value));
+                  break;
+            }
+         }
+         Debug.Assert(_jsonReader.TokenType == JsonToken.EndObject);
+         //here, we should be at the end of object containing items just added
+         //If so, remove top path from the path stack (which was pushed in AdvanceToTargetPath)
+         //       note that if we are in inner level (recursive call) then nothing was pushed at object start (so nothing to pop here)
+         if (_jsonReader.TokenType == JsonToken.EndObject && keySoFar.Length == 0) _adjustedPathStack.Pop();
+      }
+
+
+      /// <summary>
+      /// Recursive method to asynchronously add items to a given record
+      /// </summary>
+      /// <param name="itemsSoFar">List of record items to add new items to</param>
+      /// <param name="elemDepth">Depth (level) of the record element</param>
+      /// <param name="keySoFar">Name prefix "accumulated" so far, empty except for nested items, i.e. recursive call where higher level item keys are prefixed with a . separator, e.g. Name.Last</param>
+      /// <returns></returns>
+      private async Task AddXrecordItemsAsync(List<Tuple<string, object>> itemsSoFar, int elemDepth, string keySoFar)
+      {
+         //TODO: Consider making itemsSoFar List<Tuple<string, object>> as JSON contents doesn't have to be string
+         Debug.Assert(_jsonReader.TokenType == JsonToken.StartObject);  //each recursive call must be at the record start
+
+         string currentKey = string.Empty;
+
+         while (await _jsonReader.ReadAsync() && _jsonReader.Depth > elemDepth)
+         {
+            switch (_jsonReader.TokenType)
+            {
+               case JsonToken.StartObject: //recursive call to inner level
+                  await AddXrecordItemsAsync(itemsSoFar, elemDepth + 1, currentKey);
                   break;
                case JsonToken.EndObject:
                case JsonToken.StartArray:  //in case of array, dup keys will be added (to be handled by KeyValRecord ctor)

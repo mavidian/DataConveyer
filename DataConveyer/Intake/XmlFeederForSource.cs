@@ -113,7 +113,7 @@ namespace Mavidian.DataConveyer.Intake
 
       public override async Task<Tuple<ExternalLine, int>> GetNextLineAsync()
       {
-         var line = await Task.Run(() => SupplyNextXrecord()); //TODO: Consider SupplyNextXrecordAsync (with AdvanceToLocationAsync, etc.) to make async "fine-grained"
+         var line = await SupplyNextXrecordAsync();
          return line?.ToTuple(_sourceNo);
       }
 
@@ -124,6 +124,10 @@ namespace Mavidian.DataConveyer.Intake
       }
 
 
+      /// <summary>
+      /// Read enough _xmlReader to determine subsequent record.
+      /// </summary>
+      /// <returns>The next record read.</returns>
       private Xrecord SupplyNextXrecord()
       {
          if (_readerState == ReaderState.BeforeCollection)
@@ -151,8 +155,7 @@ namespace Mavidian.DataConveyer.Intake
          {
             if (!AdvanceToLocation(_xrecNodePath, _recBaseDepth)) _readerState = !_observeClusters || _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
             // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after Read() inside AdvanceToLocation returned false (which means no more data);
-            // If this happens (and _observeClusters is true), _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected upon subsequent
-            // Read(), which happens inside the call to GetCurrentXrecord below.
+            // If this happens (and _observeClusters is true), _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected inside the call to GetCurrentXrecord below.
          }
 
          if (_readerState == ReaderState.AtCollectionOutOfCluster)
@@ -175,13 +178,12 @@ namespace Mavidian.DataConveyer.Intake
                //We're marking here the first call to AdvaneToLocation for a cluster (last parm firsInCluster=true) - this is complicated/unreliable and may need to be refactored
                if (!AdvanceToLocation(_xrecNodePath, _recBaseDepth, -9, null, true)) _readerState = _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
                // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after Read() inside AdvanceToLocation returned false (which means no more data);
-               // If this happens, _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected upon subsequent
-               // Read(), which happens inside the call to GetCurrentXrecord below.
+               // If this happens, _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected inside the call to GetCurrentXrecord below.
             }
          }
 
          _xmlReader.MoveToContent();  //needed to assure we're not left at attribute in case last AdvanceToLocation involved attribute match
-                                      //as an aside, note Debug.Assert below may call IsStartElement (which in turn calls MoveToContent), but this will not happen in Release
+                                      //as an aside, note that Debug.Assert below may call IsStartElement (which in turn calls MoveToContent), but this will not happen in Release
 
          //here, we must be either on the element start node or after collection
          Debug.Assert(_readerState == ReaderState.AtCollectionInCluster && _xmlReader.IsStartElement() && _xmlReader.Name == _xrecNodePath.NodeDefs.Last().Name
@@ -193,11 +195,91 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
+      /// Asynchronously read enough _xmlReader to determine subsequent record.
+      /// </summary>
+      /// <returns>Task with the next record read.</returns>
+      private async Task<Xrecord> SupplyNextXrecordAsync()
+      {
+         if (_readerState == ReaderState.BeforeCollection)
+         { //at first, reader needs to be placed inside the collection of records to be extracted (note that only a single collection is considered)
+            var atCollection = true;
+            if (!_collNodePath.IsEmpty) atCollection = await AdvanceToLocationAsync(_collNodePath, -1);  // base level is one level above root, i.e. -1
+            if (atCollection)
+            {
+               if (_observeClusters)
+               {
+                  _readerState = ReaderState.AtCollectionOutOfCluster;
+                  _clstrBaseDepth = _collNodePath.IsEmpty ? -1 : CurrentElementDepth();  //if no collection node, then one level above root, i.e. -1
+               }
+               else
+               {
+                  _readerState = ReaderState.AtCollectionInCluster;
+                  _recBaseDepth = _collNodePath.IsEmpty ? -1 : CurrentElementDepth();  //if no collection node, then one level above root, i.e. -1
+               }
+            }
+            else _readerState = ReaderState.AfterCollection;
+         }
+         if (_readerState == ReaderState.AfterCollection) return null;  // collection not found
+
+         if (_readerState == ReaderState.AtCollectionInCluster)
+         {
+            if (!await AdvanceToLocationAsync(_xrecNodePath, _recBaseDepth)) _readerState = !_observeClusters || _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
+            // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after ReadAsync() inside AdvanceToLocationAsync returned false (which means no more data);
+            // If this happens (and _observeClusters is true), _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected inside the call to GetCurrentXrecordAsync below.
+         }
+
+         if (_readerState == ReaderState.AtCollectionOutOfCluster)
+         { // Advance to the next cluster
+           //here, we must be in _observeClusters mode and either at start or after completing a cluster
+            Debug.Assert(_observeClusters);
+            _currClstrCnt++;
+            if (_addClusterDataToTraceBin)
+            {
+               _traceBin = new Dictionary<string, object>();
+               _traceBinKeyPrefix = string.Empty;
+            }
+            _readerState = await AdvanceToLocationAsync(_clstrNodePath, _clstrBaseDepth, -9, null, false, _addClusterDataToTraceBin) ? ReaderState.AtCollectionInCluster : ReaderState.AfterCollection;
+            _recBaseDepth = CurrentElementDepth();
+            await _xmlReader.MoveToContentAsync();
+            Debug.Assert(_readerState == ReaderState.AtCollectionInCluster && _xmlReader.IsStartElement() && _xmlReader.Name == _clstrNodePath.NodeDefs.Last().Name
+                        || _readerState == ReaderState.AfterCollection);
+            if (_readerState == ReaderState.AtCollectionInCluster)
+            {
+               //We're marking here the first call to AdvaneToLocation for a cluster (last parm firstInCluster=true) - this is complicated/unreliable and may need to be refactored
+               if (!await AdvanceToLocationAsync(_xrecNodePath, _recBaseDepth, -9, null, true)) _readerState = _xmlReader.EOF ? ReaderState.AfterCollection : ReaderState.AtCollectionOutOfCluster;
+               // Note that in case of memory stream (underneath _xmlReader), EOF may still be false even after ReadAsync() inside AdvanceToLocationAsync returned false (which means no more data);
+               // If this happens, _readerState shows AtCollectionOutOfCluster, even though it should be AfterCollection; this condition is detected inside the call to GetCurrentXrecord below.
+            }
+         }
+
+         await _xmlReader.MoveToContentAsync();  //needed to assure we're not left at attribute in case last AdvanceToLocation involved attribute match
+                                                 //as an aside, note that Debug.Assert below may call IsStartElement (which in turn calls MoveToContent), but this will not happen in Release
+
+         //here, we must be either on the element start node or after collection
+         Debug.Assert(_readerState == ReaderState.AtCollectionInCluster && _xmlReader.IsStartElement() && _xmlReader.Name == _xrecNodePath.NodeDefs.Last().Name
+                   || _readerState == ReaderState.AfterCollection
+                   || _readerState == ReaderState.AtCollectionOutOfCluster && _xmlReader.Depth == 0); //this last option is really AfterCollection, where Read() returned false, but EOF is not (yet) true (can happen in case of underlying memory stream)
+
+         return _readerState == ReaderState.AfterCollection ? null : await GetCurrentXrecordAsync();
+      }
+
+
+      /// <summary>
       /// Consume the remainder of input stream, i.e. "swallow" its entire contents)
       /// </summary>
       public void ReadToEnd()
       {
          while (_xmlReader.Read()) { }
+      }
+
+
+      /// <summary>
+      /// Asynchronously consume the remainder of input stream, i.e. "swallow" its entire contents)
+      /// <returns></returns>
+      /// </summary>
+      public async Task ReadToEndAsync()
+      {
+         while (await _xmlReader.ReadAsync()) { }
       }
 
 
@@ -226,7 +308,7 @@ namespace Mavidian.DataConveyer.Intake
       /// <param name="initPath">Location path from the initial call this method (intended to only be passed during recursive calls - needed in case of reset).</param>
       /// <param name="firstInCluster">Indicator that the record is first in cluster (complicated/unreliable - to be refactored).</param>
       /// <param name="addAttrsToTraceBin">Indicator to add collected attribute data to trace bin; applicable only if AddClusterDataToTraceBin (which in turn is only applicable if _observeClusters).</param>
-      /// <returns>True if succeeded; false if location not found</returns>
+      /// <returns>True if succeeded; false if location not found.</returns>
       private bool AdvanceToLocation(XmlNodePath nodePath, int baseDepth, int depth = -9, XmlNodePath initPath = null, bool firstInCluster = false, bool addAttrsToTraceBin = false)
       {
          Debug.Assert(!nodePath.IsEmpty);
@@ -272,6 +354,67 @@ namespace Mavidian.DataConveyer.Intake
                return AdvanceToLocation(initPath, baseDepth);
             }
          } while (_xmlReader.Read());
+
+         //end of stream, no xpath found
+         return false;
+      }
+
+
+      /// <summary>
+      /// Asynchronously read _xmlReader until at given location.
+      /// </summary>
+      /// <param name="nodePath">Location path relative to current position.</param>
+      /// <param name="baseDepth">Level (Depth) passed at the initial call to limit the scope of search for inner elements.</param>
+      /// <param name="depth">Level (Depth) of the initial call this method (intended to only be passed during recursive calls).</param>
+      /// <param name="initPath">Location path from the initial call this method (intended to only be passed during recursive calls - needed in case of reset).</param>
+      /// <param name="firstInCluster">Indicator that the record is first in cluster (complicated/unreliable - to be refactored).</param>
+      /// <param name="addAttrsToTraceBin">Indicator to add collected attribute data to trace bin; applicable only if AddClusterDataToTraceBin (which in turn is only applicable if _observeClusters).</param>
+      /// <returns>Task with true if succeeded or false if location not found.</returns>
+      private async Task<bool> AdvanceToLocationAsync(XmlNodePath nodePath, int baseDepth, int depth = -9, XmlNodePath initPath = null, bool firstInCluster = false, bool addAttrsToTraceBin = false)
+      {
+         Debug.Assert(!nodePath.IsEmpty);
+
+         if (initPath == null) initPath = nodePath;
+
+         var head = nodePath.NodeDefs[0];      //XmlNodeDef representing the first xpath fragment (before the first /), i.e. current node pattern
+         var tail = nodePath.NodeDefs.Skip(1).Any() ? new XmlNodePath(nodePath.NodeDefs.Skip(1))  //XmlNodePath representing the xpath fragments after the first /, i.e. the remaining node patterns
+                                                    : null;  //end of recursion
+
+         do { } //advance till next element (ignore e.g. embedded text)
+         while (await _xmlReader.ReadAsync() && !_xmlReader.IsStartElement() && _xmlReader.Depth > baseDepth);
+         if (_xmlReader.EOF) return false;
+
+         //Distinction between initial level and base level :
+         // initDepth - level at the beginning of initial (external) call (then passed with each recursive iteration)
+         // baseDepth - level limit when advancing to next element (e.g. if advancing to cluster, it is the collection level) 
+         //Always: initDepth >= baseDepth (i.e. each call is made within level limit)
+
+         int initDepth = depth == -9 ? _xmlReader.Depth : depth;  //-9 means initial call from outside (as opposed to recursive call)
+
+         if (MatchFound(head))
+         {
+            if (addAttrsToTraceBin)
+            {
+               _traceBinKeyPrefix = CreateKey(_traceBinKeyPrefix);
+               GetAttributes(_traceBinKeyPrefix, false).ToList().ForEach(t => _traceBin.Add(t.Item1, t.Item2));
+            }
+            initDepth++;
+            //are we there yet?
+            if (tail == null || await AdvanceToLocationAsync(tail, baseDepth, initDepth, tail, false, addAttrsToTraceBin)) return true; //success!
+         }
+
+         //no match here, attempt to go back to the initial level and start over
+         do
+         {
+            if (_xmlReader.Depth < initDepth) return false;  //beyond the initial level
+
+            if (_xmlReader.Depth == initDepth)
+            { //at initial level, try again (or fail search if first in cluster)
+               if (_xmlReader.NodeType == XmlNodeType.EndElement && !firstInCluster) return false;
+               //TODO: refactor (remove reliance on firstInCluster) - too complicated.
+               return await AdvanceToLocationAsync(initPath, baseDepth);
+            }
+         } while (await _xmlReader.ReadAsync());
 
          //end of stream, no xpath found
          return false;
@@ -325,7 +468,7 @@ namespace Mavidian.DataConveyer.Intake
       private Xrecord GetCurrentXrecord()
       {
          //In spite of checking _xmlReader.EOF before calling this method, a possibility exists that this method is called after the last XML node.
-         //This happens if there a memory stream underneath xmlReader.
+         //This happens if there is a memory stream underneath xmlReader.
 
          _xmlReader.MoveToContent(); //likely not needed, but added to assure same behavior in Debug and Release (note IsStartElement in Debug.Assert that makes a call to MoveToContent)
 
@@ -337,6 +480,37 @@ namespace Mavidian.DataConveyer.Intake
 
          //Add record items from inner elements
          var explicitText = AddXrecordItems(xrecordItems, elemDepth, string.Empty);  //this will add items to xrecordItems
+
+         if (explicitText == null) return null; //means no current record, i.e. EOF
+
+         if (_includeExplicitText && !string.IsNullOrWhiteSpace(explicitText))
+         {  // add a text placed directly in the record element node (this is not typically expected)
+            xrecordItems.Add(Tuple.Create("__explicitText__", explicitText as object));
+         }
+
+         return new Xrecord(xrecordItems, _currClstrCnt, _traceBin);
+      }
+
+
+      /// <summary>
+      /// Asynchronously create record from the nodes inside current node.
+      /// </summary>
+      /// <returns>Record created (or null if no current record, i.e. EOF).</returns>
+      private async Task<Xrecord> GetCurrentXrecordAsync()
+      {
+         //In spite of checking _xmlReader.EOF before calling this method, a possibility exists that this method is called after the last XML node.
+         //This happens if there is a memory stream underneath xmlReader.
+
+         await _xmlReader.MoveToContentAsync(); //likely not needed, but added to assure same behavior in Debug and Release (note IsStartElement in Debug.Assert that makes a call to MoveToContent)
+
+         //_xmlReader is expected here at the start element or (rarely) at end of data
+         Debug.Assert(_xmlReader.IsStartElement() || _xmlReader.Depth == 0);
+
+         var xrecordItems = new List<Tuple<string, object>>();
+         var elemDepth = _xmlReader.Depth;
+
+         //Add record items from inner elements
+         var explicitText = await AddXrecordItemsAsync(xrecordItems, elemDepth, string.Empty);  //this will add items to xrecordItems
 
          if (explicitText == null) return null; //means no current record, i.e. EOF
 
@@ -397,6 +571,59 @@ namespace Mavidian.DataConveyer.Intake
 
          //It's possible that EOF was not detected until execution of Read in this method above (the reason is that XmlReader based on memory stream
          // can have Read return false, but no EOF until the next attempt to call Read).
+         //So, we're returning null to indicate that there is no current record.
+         return _xmlReader.EOF ? null : retVal;
+      }
+
+
+      /// <summary>
+      /// Recursive method to asynchronously add items to a given element.
+      /// </summary>
+      /// <param name="itemsSoFar">List of record items to add new items to.</param>
+      /// <param name="elemDepth">Depth (level) of the element.</param>
+      /// <param name="keySoFar">Name prefix "accumulated" so far, empty except for nested items, i.e. recursive call where higher level item keys are prefixed with a . separator, e.g. Name.Last</param>
+      /// <returns>Text (accumulated) of the current node (or null if no current node, i.e. EOF).</returns>
+      private async Task<string> AddXrecordItemsAsync(List<Tuple<string, object>> itemsSoFar, int elemDepth, string keySoFar)
+      {
+         //Add record items from attributes
+         if (_includeAttributes) GetAttributes(keySoFar, _addPrefixToAttrKeys).ToList().ForEach(a => itemsSoFar.Add(a));
+
+         await _xmlReader.MoveToContentAsync();
+
+         //_xmlReader is expected here at the start element or (rarely) at end of data
+         Debug.Assert(_xmlReader.IsStartElement() || _xmlReader.Depth == 0);  //each recursive call must be at the element node (or rarely this method may be called at EOF)
+
+         string retVal = string.Empty; //to be returned (to the higher/outer recursive level)
+         string innerVal = null;  //to be obtained from the lower recursive level
+
+         while (await _xmlReader.ReadAsync() && _xmlReader.Depth > elemDepth)
+         {
+            string innerKey = keySoFar;
+
+            if (_xmlReader.IsEmptyElement)
+            { // special case (e.g. <Empty/>), will not be followed by the end element; add item immediately (but first, add attributes if any)
+               var currentKey = CreateKey(keySoFar);
+               if (_includeAttributes) GetAttributes(currentKey, _addPrefixToAttrKeys).ToList().ForEach(a => itemsSoFar.Add(a));
+               itemsSoFar.Add(Tuple.Create(currentKey, string.Empty as object));
+               continue;
+            }
+            if (_xmlReader.IsStartElement())
+            { //recursive call to inner level
+               innerKey = CreateKey(innerKey);
+               innerVal = await AddXrecordItemsAsync(itemsSoFar, elemDepth + 1, innerKey);
+            }
+            if (_xmlReader.NodeType == XmlNodeType.Text)
+            { // cumulate text found on current level
+               retVal += _xmlReader.Value;
+            }
+            if (_xmlReader.NodeType == XmlNodeType.EndElement)
+            {  // done accumulating, add item
+               itemsSoFar.Add(Tuple.Create(innerKey, innerVal as object));
+            }
+         }
+
+         //It's possible that EOF was not detected until execution of Read in this method above (the reason is that XmlReader based on memory stream
+         // can have ReadAsync return false, but no EOF until the next attempt to call ReadAsync).
          //So, we're returning null to indicate that there is no current record.
          return _xmlReader.EOF ? null : retVal;
       }

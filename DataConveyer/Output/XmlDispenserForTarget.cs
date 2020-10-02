@@ -107,7 +107,7 @@ namespace Mavidian.DataConveyer.Output
 
          if (_atStart)  //Very first call
          {
-            _atStart = false;  //not thread-safe, but single-threaded
+            _atStart = false;  //not thread-safe, but output is single-threaded
             InitiateDispensing(line.ClstrNo);
          }
 
@@ -130,7 +130,27 @@ namespace Mavidian.DataConveyer.Output
       /// <returns></returns>
       public override async Task SendNextLineAsync(Tuple<ExternalLine, int> linePlus)
       {
-         await Task.Run(() => SendNextLine(linePlus));  //TODO: Consider WriteBeginningNodesAsync, WriteCloseNodesAsync, WriteXrecordAsync... to make async "fine-grained"
+         Debug.Assert(linePlus != null);  //Note that EOD marks are handled by the owner class, i.e. LineDispenser
+
+         var line = linePlus.Item1;
+         Debug.Assert(line.GetType() == typeof(Xrecord));
+         Debug.Assert(linePlus.Item2 == TargetNo);  //note that LineDispenserForTarget class could've just be sent ExternalLine (and not the Tuple with TargetNo), but it's kept for consistency/duality with LineFeederForSource
+
+         if (_atStart)  //Very first call
+         {
+            _atStart = false;  //not thread-safe, but output is single-threaded
+            await InitiateDispensingAsync(line.ClstrNo);
+         }
+
+         if (_observeClusters && line.ClstrNo != _currClstrNo)  //new cluster
+         {  //Close _clstrNodePath and start a new one
+            Debug.Assert(_clstrNodePath.NodeDefs.Any());
+            await WriteCloseNodesAsync(_clstrNodePath.NodeDefs.Count);
+            await WriteStartNodesAsync(_clstrNodePath);
+            _currClstrNo = line.ClstrNo;
+         }
+
+         await WriteXrecordAsync(_recNodePath, line); //write record contents
       }
 
 
@@ -149,7 +169,7 @@ namespace Mavidian.DataConveyer.Output
          //This method is intended to be called by LineDispenser (owner) upon receiving EOD mark. At that point, we should have
          // cluster and collection nodes open - let's close them (we're closing them explicitly even though XmlWriter could do it upon closing).
          if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to 
-         WriteCloseNodes(_clusterDepth + (_collNodePath.IsEmpty ? 0 : _collNodePath.NodeDefs.Count));  //TODO: Consider WriteCloseNodesAsync (with WriteEndElementAsync)
+         await WriteCloseNodesAsync(_clusterDepth + (_collNodePath.IsEmpty ? 0 : _collNodePath.NodeDefs.Count));
          await _xmlWriter.FlushAsync();
       }
 
@@ -181,10 +201,29 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
+      /// Asynchronously write nodes at the very beginning of the XML document
+      /// </summary>
+      /// <param name="firstClstrNo"></param>
+      /// <returns></returns>
+      private async Task InitiateDispensingAsync(int firstClstrNo)
+      {
+         if (!_collNodePath.IsEmpty)
+         {
+            await _xmlWriter.WriteStartDocumentAsync();
+            await WriteStartNodesAsync(_collNodePath);
+         }
+         if (_observeClusters)
+         {
+            await WriteStartNodesAsync(_clstrNodePath);
+            _currClstrNo = firstClstrNo;
+         }
+      }
+
+
+      /// <summary>
       /// Write a series of starting nodes based on the path given
       /// </summary>
       /// <param name="nodesToWrite"></param>
-      /// <returns></returns>
       private void WriteStartNodes(XmlNodePath nodesToWrite)
       {
          //note that XmlWriter remembers all nodes that were started, so there is no need to remember them
@@ -198,8 +237,27 @@ namespace Mavidian.DataConveyer.Output
          {  //tail exists; inner node(s) are written using recursion
             WriteStartNodes(new XmlNodePath(nodesToWrite.NodeDefs.Skip(1)));
          }
+      }
 
-         return;
+
+      /// <summary>
+      /// Asynchronously write a series of starting nodes based on the path given
+      /// </summary>
+      /// <param name="nodesToWrite"></param>
+      /// <returns></returns>
+      private async Task WriteStartNodesAsync(XmlNodePath nodesToWrite)
+      {
+         //note that XmlWriter remembers all nodes that were started, so there is no need to remember them
+         Debug.Assert(!nodesToWrite.IsEmpty);
+         _ = nodesToWrite.NodeDefs.Skip(1).Any() ? new XmlNodePath(nodesToWrite.NodeDefs.Skip(1))  //the remaining nodes to write during recursive calls
+                                                 : null;  //end of recursion
+
+         await WriteStartNodeAsync(nodesToWrite.NodeDefs[0]);  //head
+
+         if (nodesToWrite.NodeDefs.Skip(1).Any())  //tail
+         {  //tail exists; inner node(s) are written using recursion
+            await WriteStartNodesAsync(new XmlNodePath(nodesToWrite.NodeDefs.Skip(1)));
+         }
       }
 
 
@@ -218,6 +276,21 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
+      /// Asynchronously write a single starting node along with its attributes
+      /// </summary>
+      /// <param name="nodeToWrite">Definition of the node to write</param>
+      /// <returns></returns>
+      private async Task WriteStartNodeAsync(XmlNodeDef nodeToWrite)
+      {
+         await _xmlWriter.WriteStartElementAsync(null, nodeToWrite.Name, null);
+         foreach (var attr in nodeToWrite.GetAttributes())
+         {
+            await _xmlWriter.WriteAttributeStringAsync(null, attr.Item1, null, attr.Item2?.ToString());
+         }
+      }
+
+
+      /// <summary>
       /// Write a series of closing nodes.
       /// </summary>
       /// <param name="howMany">Number of consecutive nodes (levels) to close.</param>
@@ -225,6 +298,18 @@ namespace Mavidian.DataConveyer.Output
       {
          while (howMany-- > 0) _xmlWriter.WriteEndElement();
       }
+
+
+      /// <summary>
+      /// Asynchronously write a series of closing nodes.
+      /// </summary>
+      /// <param name="howMany">Number of consecutive nodes (levels) to close.</param>
+      /// <returns></returns>
+      private async Task WriteCloseNodesAsync(int howMany)
+      {
+         while (howMany-- > 0) await _xmlWriter.WriteEndElementAsync();
+      }
+
 
       /// <summary>
       /// Send items of the current record to XML output.
@@ -273,6 +358,57 @@ namespace Mavidian.DataConveyer.Output
             WriteXrecord(tail, line);
          }
          _xmlWriter.WriteEndElement();  //end element (note that it will skip full end tag in case of no inner nodes -WriteFullEndElement can be used to avoid this)
+      }
+
+
+      /// <summary>
+      /// Asynchronously send items of the current record to XML output.
+      /// </summary>
+      /// <param name="xrecNodePath"></param>
+      /// <param name="line"></param>
+      /// <returns></returns>
+      private async Task WriteXrecordAsync(XmlNodePath xrecNodePath, ExternalLine line)
+      {
+         Debug.Assert(line.GetType() == typeof(Xrecord));
+
+         var head = xrecNodePath.NodeDefs[0];
+         var tail = xrecNodePath.NodeDefs.Skip(1).Any() ? new XmlNodePath(xrecNodePath.NodeDefs.Skip(1))  //XmlNodePath representing the remaining node patterns
+                                                        : null;  //end of recursion
+
+         await _xmlWriter.WriteStartElementAsync(null, head.Name, null);  //start element
+
+         var attrsToWrite = head.GetAttributes();
+
+         if (tail == null)  //leaf level (end of recursion)
+         {
+            //Don't write records right away as some items may need to be written as attributes (and not inner nodes)
+            // Instead, collect all attributes and inner nodes to write.
+            //Items to be written as attributes are those that start with @ or are listed in AttributeFields part of XmlJsonOutputSettings.
+            var innerNodesToWrite = new List<Tuple<string, object>>();
+            foreach (var item in line.Items)
+            {
+               if (item.Item1[0] == '@')
+               {  //attribute
+                  attrsToWrite.Add(Tuple.Create(item.Item1.Substring(1), item.Item2));
+               }
+               else if (_attributeFields.Contains(item.Item1))
+               {  //attribute
+                  attrsToWrite.Add(item);
+               }
+               else
+               { //inner node
+                  innerNodesToWrite.Add(item);
+               }
+            }
+            attrsToWrite.ForEach(async a => await _xmlWriter.WriteAttributeStringAsync(null, a.Item1, null, a.Item2?.ToString()));  //attributes (note that ToString() for string is just a reference to itself, so no perfromance penalty)
+            innerNodesToWrite.ForEach(async n => await _xmlWriter.WriteElementStringAsync(null, n.Item1, null, n.Item2?.ToString())); //inner nodes
+         }
+         else
+         { //we're not at the leaf level yet, write the attributes and recurse
+            attrsToWrite.ForEach(async a => await _xmlWriter.WriteAttributeStringAsync(null, a.Item1, null,  a.Item2?.ToString()));  //attributes
+            await WriteXrecordAsync(tail, line);
+         }
+         await _xmlWriter.WriteEndElementAsync();  //end element (note that it will skip full end tag in case of no inner nodes (WriteFullEndElementAsync can be used to avoid this)
       }
 
    }

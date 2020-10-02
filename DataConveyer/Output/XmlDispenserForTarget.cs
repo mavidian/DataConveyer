@@ -154,6 +154,9 @@ namespace Mavidian.DataConveyer.Output
       }
 
 
+      /// <summary>
+      /// Write closing nodes at end of data.
+      /// </summary>
       internal override void ConcludeDispensing()
       {
          //This method is intended to be called by LineDispenser (owner) upon receiving EOD mark. At that point, we should have
@@ -164,6 +167,10 @@ namespace Mavidian.DataConveyer.Output
       }
 
 
+      /// <summary>
+      /// Asynchronously write closing nodes at end of data.
+      /// </summary>
+      /// <returns></returns>
       internal override async Task ConcludeDispensingAsync()
       {
          //This method is intended to be called by LineDispenser (owner) upon receiving EOD mark. At that point, we should have
@@ -174,6 +181,10 @@ namespace Mavidian.DataConveyer.Output
       }
 
 
+
+      /// <summary>
+      /// Dispose underlying XML writer.
+      /// </summary>
       public override void Dispose()
       {
          _xmlWriter.Dispose();

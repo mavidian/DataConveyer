@@ -135,10 +135,33 @@ namespace Mavidian.DataConveyer.Output
       /// <returns></returns>
       public override async Task SendNextLineAsync(Tuple<ExternalLine, int> linePlus)
       {
-         await Task.Run(() => SendNextLine(linePlus));  //TODO: Consider WriteBeginningNodesAsync, WriteCloseNodesAsync, WriteXrecordAsync... to make async "fine-grained"
+         Debug.Assert(linePlus != null);  //Note that EOD marks are handled by the owner class, i.e. LineDispenser
+
+         var line = linePlus.Item1;
+         Debug.Assert(line.GetType() == typeof(Xrecord));
+         Debug.Assert(linePlus.Item2 == TargetNo);  //note that LineDispenserForTarget class could've just be sent ExternalLine (and not the Tuple with TargetNo), but it's kept for consistency/duality with LineFeederForSource
+
+         if (_atStart)  //Very first call
+         {
+            _atStart = false;  //not thread-safe, but single-threaded
+            await InitiateDispensingAsync(line.ClstrNo);
+         }
+
+         if (_observeClusters && line.ClstrNo != _currClstrNo)  //new cluster
+         {  //Close _clstrNodePath and start a new one
+            Debug.Assert(_clstrNodePath.Any());
+            await WriteCloseNodesAsync(_recNodeCount);
+            await WriteStartNodesAsync(_recNodePath, true);  //no need to update _recNodeCount (it's been aleady set in InitiateDispensign)
+            _currClstrNo = line.ClstrNo;
+         }
+
+         await WriteXrecordAsync(line); //write record contents
       }
 
 
+      /// <summary>
+      /// Write closing brackets at end of data.
+      /// </summary>
       internal override void ConcludeDispensing()
       {
          //This method is intended to be called by LineDispenser (owner) upon receiving EOD mark. At that point, we are at end of
@@ -149,17 +172,23 @@ namespace Mavidian.DataConveyer.Output
       }
 
 
+      /// <summary>
+      /// Asynchronously write closing brackets at end of data.
+      /// </summary>
+      /// <returns></returns>
       internal override async Task ConcludeDispensingAsync()
       {
          //This method is intended to be called by LineDispenser (owner) upon receiving EOD mark. At that point, we are at end of
          // last record - let's close open nodes (we're closing them explicitly even though XmlWriter could do it upon closing).
          if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to 
-         WriteCloseNodes(_collNodeCount + _clstrNodeCount + _recNodeCount);
-         //TODO: Consider WriteCloseNodesAsync (with WriteEndElementAsync)
+         await WriteCloseNodesAsync(_collNodeCount + _clstrNodeCount + _recNodeCount);
          await _jsonWriter.FlushAsync();
       }
 
 
+      /// <summary>
+      /// Dispose underlying JSON writer.
+      /// </summary>
       public override void Dispose()
       {
          _jsonWriter.Close();
@@ -169,7 +198,7 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
-      /// Write nodes at the very beginning of the JSON document
+      /// Write nodes at the very beginning of the JSON document.
       /// </summary>
       /// <param name="firstClstrNo"></param>
       private void InitiateDispensing(int firstClstrNo)
@@ -212,16 +241,60 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
-      /// Write a series of start object nodes based on the given path
+      /// Asynchronously write nodes at the very beginning of the JSON document.
       /// </summary>
-      /// <param name="nodesToWrite">Nodes constituting collection, cluster or record</param>
-      /// <param name="arrayAtEnd">true to write array start after the nodes (cluster and record), false otherwise (collection)</param>
+      /// <param name="firstClstrNo"></param>
       /// <returns></returns>
+      private async Task InitiateDispensingAsync(int firstClstrNo)
+      {
+         //Special case: _recNodePath may be absent/null to indicate each record being its own JSON object without any sort of wrapper
+         //              (akin to XML fragments, technically not a valid JSON)
+         //              If so, then CollectionNode and ClusterNode must also be null.
+         if (!_recNodePath?.Any() ?? true)
+         { //here,  RecordNode is absent; check CollectionNode and ClusterNodes, if any is present then reset it
+            if (_collNodePath?.Any() ?? false)
+            {  //Collection node is present
+               _collNodePath = null;
+               this.LogWarning("CollectionNode cannot be present in JSON output settings if RecordNode is absent; CollectionNode is being ignored.");
+            }
+            if (_observeClusters)
+            {  //ClusterNode is present
+               _clstrNodePath = null;
+               _observeClusters = false;
+               this.LogWarning("ClusterNode cannot be present in JSON output settings if RecordNode is absent; ClusterNode is being ignored.");
+            }
+         }
+
+         if (_collNodePath?.Any() ?? false)
+         {  //Collection node is present
+            _collNodeCount = await WriteStartNodesAsync(_collNodePath, false);
+         }
+
+         if (_observeClusters)
+         {  //ClusterNode is present
+            _clstrNodeCount = await WriteStartNodesAsync(_clstrNodePath, true);
+            _currClstrNo = firstClstrNo;
+         }
+
+         if (_recNodePath?.Any() ?? false)
+         {  //RecordNode is present
+            _recNodeCount = await WriteStartNodesAsync(_recNodePath, true);
+         }
+         else Debug.Assert(!_collNodePath?.Any() ?? true && !_observeClusters);
+      }
+
+
+      /// <summary>
+      /// Write a series of start object nodes.
+      /// </summary>
+      /// <param name="nodesToWrite">Nodes constituting collection, cluster or record.</param>
+      /// <param name="arrayAtEnd">true to write array start after the nodes (cluster and record), false otherwise (collection).</param>
+      /// <returns>Number of nodes written.</returns>
       private int WriteStartNodes(IEnumerable<string> nodesToWrite, bool arrayAtEnd)
       {
          Debug.Assert(nodesToWrite.Any());
 
-         bool nonEmptyNodeExists = false;  //to verify if writing array at end shoud be skipped
+         bool nonEmptyNodeExists = false;  //to verify if writing array at end should be skipped
 
          int retVal = 0;
 
@@ -243,7 +316,7 @@ namespace Mavidian.DataConveyer.Output
          // Generally, arrayAtEnd should be true when starting cluster and record, but false for collection.
          // However, if all nodes to write are empty, then don't add array at end.
          // This is because "one empty node serves as no node" - note that null ClusterNode and RecordNode
-         // cannot sever as "no node" as it has special meaning ("don't observe clusters" and "each record own JSON" respectively)
+         // cannot serve as "no node" as it has special meaning ("don't observe clusters" and "each record own JSON" respectively)
 
          if (arrayAtEnd && nonEmptyNodeExists) { _jsonWriter.WriteStartArray(); retVal++;  }
 
@@ -252,12 +325,63 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
-      /// Write a series of closing nodes.
+      /// Asynchronously write a series of start object nodes.
+      /// </summary>
+      /// <param name="nodesToWrite">Nodes constituting collection, cluster or record.</param>
+      /// <param name="arrayAtEnd">true to write array start after the nodes (cluster and record), false otherwise (collection).</param>
+      /// <returns>Task with a number of start nodes written.</returns>
+      private async Task<int> WriteStartNodesAsync(IEnumerable<string> nodesToWrite, bool arrayAtEnd)
+      {
+         Debug.Assert(nodesToWrite.Any());
+
+         bool nonEmptyNodeExists = false;  //to verify if writing array at end should be skipped
+
+         int retVal = 0;
+
+         foreach (var node in nodesToWrite)
+         {
+            if (node.Length > 0)
+            {
+               await _jsonWriter.WriteStartObjectAsync();
+               await _jsonWriter.WritePropertyNameAsync(node);
+               nonEmptyNodeExists = true;
+            }
+            else //empty node name
+            {  // instead of an object with an empty name, write an array
+               await _jsonWriter.WriteStartArrayAsync();
+            }
+            retVal++;
+         }
+
+         // Generally, arrayAtEnd should be true when starting cluster and record, but false for collection.
+         // However, if all nodes to write are empty, then don't add array at end.
+         // This is because "one empty node serves as no node" - note that null ClusterNode and RecordNode
+         // cannot serve as "no node" as it has special meaning ("don't observe clusters" and "each record own JSON" respectively)
+
+         if (arrayAtEnd && nonEmptyNodeExists) { await _jsonWriter.WriteStartArrayAsync(); retVal++; }
+
+         return retVal;
+      }
+
+
+      /// <summary>
+      /// Write a series of ending brackets.
       /// </summary>
       /// <param name="howMany">Number of consecutive nodes (levels, i.e. arrays or objects) to close.</param>
       private void WriteCloseNodes(int howMany)
       {
          while (howMany-- > 0) _jsonWriter.WriteEnd();
+      }
+
+
+      /// <summary>
+      /// Asynchronously write a series of ending brackets.
+      /// </summary>
+      /// <param name="howMany">Number of consecutive nodes (levels, i.e. arrays or objects) to close.</param>
+      /// <returns></returns>
+      private async Task WriteCloseNodesAsync(int howMany)
+      {
+         while (howMany-- > 0) await _jsonWriter.WriteEndAsync();
       }
 
 
@@ -282,6 +406,32 @@ namespace Mavidian.DataConveyer.Output
             _jsonWriter.WriteValue(item.Item2);  //TODO: Consider strongly typed values (when Item2 becomes of object type, not string)
          }
          _jsonWriter.WriteEndObject();
+         _after1stRecord = true;
+      }
+
+
+      /// <summary>
+      /// Asynchronously end items of the current record to JSON output.
+      /// </summary>
+      /// <param name="line"></param>
+      /// <returns></returns>
+      private async Task WriteXrecordAsync(ExternalLine line)
+      {
+         Debug.Assert(line.GetType() == typeof(Xrecord));
+
+         if (_recNodeCount == 0 && _jsonWriter.Formatting == Formatting.Indented && _after1stRecord)
+         {  //we're starting a new JSON document here (technically not a valid JSON)
+            //add an extra new line to help in "pretty printing"
+            await _underlyingWriter.WriteLineAsync();
+         }
+         await _jsonWriter.WriteStartObjectAsync();
+         foreach (var item in line.Items)
+         {
+            //note that unlike XML, JSON does not support attributes, so we know that every item has to be written as inner node
+            await _jsonWriter.WritePropertyNameAsync(item.Item1); //key
+            await _jsonWriter.WriteValueAsync(item.Item2);  //TODO: Consider strongly typed values (when Item2 becomes of object type, not string)
+         }
+         await _jsonWriter.WriteEndObjectAsync();
          _after1stRecord = true;
       }
 

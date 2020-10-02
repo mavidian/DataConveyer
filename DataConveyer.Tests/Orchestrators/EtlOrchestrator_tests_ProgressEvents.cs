@@ -379,7 +379,7 @@ namespace DataConveyer.Tests.Orchestrators
          prgEvents.Where(e => e.Phase == Phase.Intake).Select(e => e.ClstrNo).Should().BeInAscendingOrder();
          prgEvents.Where(e => e.Phase == Phase.Transformation).Should().HaveCount(11);
          //The assert below may fail as the no guarantee that the transformation will process the records out of order (even with the delays)
-         prgEvents.Where(e => e.Phase == Phase.Transformation).Select(e => e.ClstrNo).Should().NotBeAscendingInOrder(); //notice .Not after Should()
+         prgEvents.Where(e => e.Phase == Phase.Transformation).Select(e => e.ClstrNo).Should().NotBeInAscendingOrder(); //notice .Not after Should()
          prgEvents.Where(e => e.Phase == Phase.Output).Should().HaveCount(11);
          prgEvents.Where(e => e.Phase == Phase.Output).Select(e => e.ClstrNo).Should().BeInAscendingOrder();
 

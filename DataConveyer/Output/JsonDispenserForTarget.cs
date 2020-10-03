@@ -54,7 +54,7 @@ namespace Mavidian.DataConveyer.Output
       /// <param name="writer"></param>
       /// <param name="targetNo">1 based target number.</param>
       /// <param name="settings"></param>
-      /// <param name="outputIsAsync"></param>
+      /// <param name="outputIsAsync">Unlike XML writer, JSON writer does not async operations enables, so this parameter is ignored.</param>
       internal JsonDispenserForTarget(TextWriter writer, int targetNo, string settings, bool outputIsAsync) : base(writer, targetNo)
       //Note that writer is passed to base class, even though it is not used there (all relevant methods are overridden, so null could've been passed instead).
       //This is because base.Dispose (called by Dispose in this class) disposes the writer (it is unclear whether XmlWriter.Dispose disposes underlying writer).

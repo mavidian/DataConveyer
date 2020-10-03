@@ -93,7 +93,77 @@ namespace DataConveyer_tests.Orchestrators_Output
          //act
          var counts = orchestrator.ExecuteAsync().Result;
 
-        //assert
+         //assert
+         counts.RowsRead.Should().Be(5);
+         counts.ClustersRead.Should().Be(5);
+         counts.ClustersWritten.Should().Be(5);
+         counts.RowsWritten.Should().Be(5);
+
+         _jsonOutput1.ToString().Should().Be(@"{
+  ""Root"": {
+    ""Members"": {
+      ""Member"": [
+        {
+          ""RECTYPE"": ""XYZ"",
+          ""NAME"": ""Mary"",
+          ""NUM"": ""123"",
+          ""DOB"": ""6/5/88""
+        },
+        {
+          ""RECTYPE"": ""ABCD"",
+          ""ABCD_ID"": ""XYZ00883"",
+          ""NAME"": ""Mary"",
+          ""NUM"": ""223""
+        },
+        {
+          ""RECTYPE"": ""ABCD"",
+          ""ABCD_ID"": ""XYZ00883"",
+          ""NAME"": ""Susan   "",
+          ""NUM"": ""323""
+        },
+        {
+          ""RECTYPE"": ""ABCD"",
+          ""ABCD_ID"": ""XYZ00883"",
+          ""NAME"": ""Mary"",
+          ""NUM"": ""423""
+        },
+        {
+          ""EOF"": null
+        }
+      ]
+    }
+  }
+}"
+            );
+      }
+
+
+      [TestMethod]
+      public void processJsonOutputAsync_SimpleConfig_CorrectData()
+      {
+         //arrange
+         _config.InputDataKind = KindOfTextData.Keyword;
+         _config.IntakeSupplier = _inLine;
+         _config.RetainQuotes = false;
+         _config.InputKeyPrefix = "@p";
+         _config.ExcludeItemsMissingPrefix = false;
+         _config.ActionOnDuplicateKey = ActionOnDuplicateKey.IgnoreItem;
+         //note that this test does not have types defined, hence all fields (incl. NUM) are of String type
+         _config.ClusterMarker = (rec, prevRec, recCnt) => { return true; };  //single record clusters
+         _config.AllowOnTheFlyInputFields = true;
+         _config.TransformerType = TransformerType.ClusterFilter;
+         _config.ClusterFilterPredicate = c => true;  // no transformations, data passed as is
+         _config.OutputDataKind = KindOfTextData.JSON;
+         _config.XmlJsonOutputSettings = "CollectionNode|Root/Members,RecordNode|Member,IndentChars|  ";  //pretty-print
+         _config.OutputWriter = () => _outputWriter1;
+         _config.AsyncOutput = true;
+
+         var orchestrator = new EtlOrchestrator(_config);
+
+         //act
+         var counts = orchestrator.ExecuteAsync().Result;
+
+         //assert
          counts.RowsRead.Should().Be(5);
          counts.ClustersRead.Should().Be(5);
          counts.ClustersWritten.Should().Be(5);

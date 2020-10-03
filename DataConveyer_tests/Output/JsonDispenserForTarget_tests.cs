@@ -963,5 +963,41 @@ namespace DataConveyer_tests.Output
          actual.Should().Be(expected);
       }
 
+
+      [DataTestMethod]
+      [DataRow("Test_01")]
+      [DataRow("Test_02")]
+      [DataRow("Test_03")]
+      [DataRow("Test_04")]
+      [DataRow("Test_05")]
+      [DataRow("Test_06")]
+      [DataRow("Test_07")]
+      [DataRow("Test_08")]
+      [DataRow("Test_09")]
+      [DataRow("Test_10")]
+      [DataRow("Test_11")]
+      [DataRow("Test_12")]
+      public void JsonWritingAsync_EndToEnd_CorrectData(string testCase)
+      {
+         //This is an end-to-end integration test of JSON writing
+
+         //arrange
+         var testData = _testDataRepo[testCase];
+         var inputRecs = testData.Item1;
+         var settings = testData.Item2;
+         var dummyTargetNo = 15;
+         var output = new StringWriter();
+         var xrecordConsumer = new JsonDispenserForTarget(output, dummyTargetNo, settings, true);
+         var expected = testData.Item3;
+
+         //act
+         inputRecs.ForEach(async r => await xrecordConsumer.SendNextLineAsync(Tuple.Create((ExternalLine)r, dummyTargetNo)));
+         xrecordConsumer.ConcludeDispensingAsync().Wait();  //note that normally EOD marks are handled by LineDispenser
+         var actual = output.ToString();
+
+         //assert
+         actual.Should().Be(expected);
+      }
+
    }
 }

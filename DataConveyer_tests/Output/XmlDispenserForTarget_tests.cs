@@ -660,5 +660,38 @@ namespace DataConveyer_tests.Output
          actual.Should().Be(expected);
       }
 
+
+      [DataTestMethod]
+      [DataRow("Test_1")]
+      [DataRow("Test_2")]
+      [DataRow("Test_3")]
+      [DataRow("Test_4")]
+      [DataRow("Test_5")]
+      [DataRow("Test_6")]
+      [DataRow("Test_7")]
+      [DataRow("Test_7a")]
+      [DataRow("Test_8")]
+      public void XmlWritingAsync_EndToEnd_CorrectData(string testCase)
+      {
+         //This is an end-to-end integration test of the XML parsing
+
+         //arrange
+         var testData = _testDataRepo[testCase];
+         var inputRecs = testData.Item1;
+         var settings = testData.Item2;
+         var dummyTargetNo = 15;
+         var output = new StringWriter();
+         var xrecordConsumer = new XmlDispenserForTarget(output, dummyTargetNo, settings, true);
+         var expected = testData.Item3;
+
+         //act
+         inputRecs.ForEach(async r => await xrecordConsumer.SendNextLineAsync(Tuple.Create((ExternalLine)r, dummyTargetNo)));
+         xrecordConsumer.ConcludeDispensingAsync().Wait();  //note that normally EOD marks are handled by LineDispenser
+         var actual = output.ToString();
+
+         //assert
+         actual.Should().Be(expected);
+      }
+
    }
 }

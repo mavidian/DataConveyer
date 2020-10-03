@@ -141,6 +141,60 @@ namespace DataConveyer.Tests.Orchestrators_Intake
 
 
       [Fact]
+      public void ProcessXmlIntakeAsync_SimpleInput_CorrectData()
+      {
+         //arrange
+         _config.AsyncIntake = true;
+         _config.AllowOnTheFlyInputFields = true;
+         _config.XmlJsonIntakeSettings = "CollectionNode|Root/Members[@q=\"good\"],RecordNode|Member";
+
+         var orchestrator = TestUtilities.GetTestOrchestrator(_config, "_clusteringBlock", _resultsExtractor);
+
+         //act
+         _ = orchestrator.ExecuteAsync();
+         _resultsExtractor.Completion.Wait();
+
+         //assert
+         var resultingClusters = _resultingClusters.ToList();
+
+         resultingClusters.Should().HaveCount(3);  //3 clusters, each with a single record
+
+         var clstr = resultingClusters[0];
+         clstr.ClstrNo.Should().Be(1);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         var rec = clstr[0];
+         rec.Count.Should().Be(6);
+         rec.RecNo.Should().Be(1);
+         rec.ClstrNo.Should().Be(1);
+         rec["ID"].Should().Be("1");
+         rec["FName"].Should().Be("Paul");
+         rec["Empty2"].Should().Be(string.Empty);
+
+         clstr = resultingClusters[1];
+         clstr.ClstrNo.Should().Be(2);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(4);  //just 4 inner nodes (attributes are not included)
+         rec.ClstrNo.Should().Be(2);
+         rec["ID"].Should().Be("2");
+         rec["FName"].Should().Be("John");  //attribute on the inner node doesn't matter
+         rec["LName"].Should().Be("Green");
+         rec["DOB"].Should().Be("8/23/1967");
+
+         clstr = resultingClusters[2];
+         clstr.ClstrNo.Should().Be(3);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(4);  //5 inner nodes, but 1 dup
+         rec.ClstrNo.Should().Be(3);
+         rec["ID"].Should().Be("3");
+         rec["FName"].Should().Be("Joseph");  //dups ignored (by default)
+         rec["LName"].Should().Be("Doe");
+         rec["DOB"].Should().Be("11/6/1994");
+      }
+
+
+      [Fact]
       public void ProcessXmlIntake_SimpleInputWithTypeDefs_CorrectData()
       {
          //arrange

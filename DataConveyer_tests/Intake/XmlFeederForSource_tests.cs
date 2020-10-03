@@ -22,6 +22,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace DataConveyer_tests.Intake
 {
@@ -1087,6 +1088,52 @@ namespace DataConveyer_tests.Intake
       }
 
 
+      [DataTestMethod]
+      [DataRow("Members_1")]
+      [DataRow("Members_1a")]
+      [DataRow("Members_1b")]
+      [DataRow("Members_1bE")]
+      [DataRow("Members_1c")]
+      [DataRow("Members_1g")]
+      [DataRow("Members_2")]
+      [DataRow("Members_2a")]
+      [DataRow("Members_2e")]
+      [DataRow("Members_2f")]
+      [DataRow("Members_2g")]
+      [DataRow("Members_2h")]
+      [DataRow("Members_3")]
+      [DataRow("Members_4")]
+      [DataRow("Members_5")]
+      public void XmlParsingAsync_EndToEnd_CorrectData(string testCase)
+      {
+         //This is a series of end-to-end integration tests of XML parsing
+
+         //arrange
+         var testData = _testDataRepo[testCase];
+         var inputXML = testData.Item1;
+         var settings = testData.Item2;
+         var dummySourceNo = 6;
+         var xrecordSupplier = new XmlFeederForSource(new StringReader(inputXML), dummySourceNo, settings, true);
+         var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
+         var actual = new List<Xrecord>();
+         var expected = testData.Item3;
+
+         //act
+         Xrecord elem;
+         while ((elem = ((Task<Xrecord>)xrecordSupplierPO.Invoke("SupplyNextXrecordAsync")).Result) != null)
+         {
+            actual.Add(elem);
+         }
+
+         //assert
+         actual.Count.Should().Be(expected.Count);
+         for (var i = 0; i < actual.Count; i++)
+         {
+            actual[i].Should().BeEquivalentTo(expected[i]);
+         }
+      }
+
+
       [TestMethod]
       public void ReadToEnd__ConsumesAllInput()
       {
@@ -1106,6 +1153,28 @@ namespace DataConveyer_tests.Intake
 
          //assert
          elem.Should().BeNull();
+      }
+
+
+      [TestMethod]
+      public void ReadToEndAsync__ConsumesAllInput()
+      {
+         //This end-to-end integration test of XML parsing verifies that EOD mark is supplied upon exhausting data on input
+
+         //arrange
+         var testData = _testDataRepo["Members_1"];
+         var inputXML = testData.Item1;
+         var settings = testData.Item2;
+         var dummySourceNo = 6;
+         var xrecordSupplier = new XmlFeederForSource(new StringReader(inputXML), dummySourceNo, settings, true);
+         var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
+
+         //act
+         xrecordSupplier.ReadToEnd();
+         var elem = xrecordSupplierPO.Invoke("SupplyNextXrecordAsync") as Task<Xrecord>;
+
+         //assert
+         elem.Result.Should().BeNull();
       }
 
    }

@@ -171,6 +171,80 @@ namespace DataConveyer.Tests.Orchestrators_Intake
 
 
       [Fact]
+      public void ProcessJsonIntakeAsync_SimpleInput_CorrectData()
+      {
+         //arrange
+         _config.AsyncIntake = true;
+         _config.IntakeReader = () => _intakeReader;
+         _config.InputDataKind = KindOfTextData.JSON;
+         _config.AllowOnTheFlyInputFields = true;
+         _config.XmlJsonIntakeSettings = "CollectionNode|Root/Members,RecordNode|Member";
+
+         var orchestrator = TestUtilities.GetTestOrchestrator(_config, "_clusteringBlock", _resultsExtractor);
+
+         //act
+         _ = orchestrator.ExecuteAsync();
+         _resultsExtractor.Completion.Wait();
+
+         //assert
+         var resultingClusters = _resultingClusters.ToList();
+
+         resultingClusters.Should().HaveCount(5);  //5 clusters, each with a single record
+
+         var clstr = resultingClusters[0];
+         clstr.ClstrNo.Should().Be(1);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         var rec = clstr[0];
+         rec.Count.Should().Be(6);
+         rec.RecNo.Should().Be(1);
+         rec.ClstrNo.Should().Be(1);
+         rec["ID"].Should().Be("1");
+         rec["FName"].Should().Be("Paul");
+         rec["Empty2"].Should().Be(string.Empty);
+
+         clstr = resultingClusters[1];
+         clstr.ClstrNo.Should().Be(2);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(4);
+         rec.ClstrNo.Should().Be(2);
+         rec["ID"].Should().Be("2");
+         rec["FName"].Should().Be("John");
+         rec["LName"].Should().Be("Green");
+         rec["DOB"].Should().Be("8/23/1967");
+
+         clstr = resultingClusters[2];
+         clstr.ClstrNo.Should().Be(3);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(4);
+         rec.ClstrNo.Should().Be(3);
+         rec["ID"].Should().Be("3");
+         rec["FName"].Should().Be("Joseph");  ///Dup'd Joseph ignored when KeyValRecord got constructed (ActionOnDuplicateKey.IgnoreItem)
+         rec["LName"].Should().Be("Doe");
+         rec["DOB"].Should().Be("11/6/1994");
+
+         clstr = resultingClusters[3];
+         clstr.ClstrNo.Should().Be(4);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(2);
+         rec.ClstrNo.Should().Be(4);
+         rec["ID"].Should().Be("-1");
+         rec["Data"].Should().Be("Same level, not ignored in JSON.");
+
+         clstr = resultingClusters[4];
+         clstr.ClstrNo.Should().Be(5);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(2);
+         rec.ClstrNo.Should().Be(5);
+         rec["ID"].Should().Be("-2");
+         rec["Data"].Should().Be("Same level, not ignored in JSON.");
+      }
+
+
+      [Fact]
       public void ProcessJsonIntake_InputFieldsDefined_CorrectData()
       {
          //arrange

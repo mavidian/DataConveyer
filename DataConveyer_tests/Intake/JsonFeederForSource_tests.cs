@@ -22,6 +22,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace DataConveyer_tests.Intake
 {
@@ -1851,6 +1852,60 @@ namespace DataConveyer_tests.Intake
       }
 
 
+      [DataTestMethod]
+      [DataRow("Members_1")]
+      [DataRow("Members_1a")]
+      [DataRow("Members_1c")]
+      [DataRow("Members_1d")]
+      [DataRow("Members_1e")]
+      [DataRow("Members_1f")]
+      [DataRow("Members_1g")]
+      [DataRow("Members_2")]
+      [DataRow("Members_2b")]
+      [DataRow("Members_2c")]
+      [DataRow("Members_2d")]
+      [DataRow("Members_2d1")]
+      [DataRow("Members_2e")]
+      [DataRow("Members_2f")]
+      [DataRow("Members_2g")]
+      [DataRow("Members_2h")]
+      [DataRow("Members_2i")]
+      [DataRow("Members_2j")]
+      [DataRow("Members_2k")]
+      [DataRow("Members_4")]
+      [DataRow("Members_5")]
+      [DataRow("Members_6")]
+      [DataRow("Members_6a")]
+      public void JsonParsingAsync_EndToEnd_CorrectData(string testCase)
+      {
+         //This is a series of end-to-end integration tests of JSON parsing
+
+         //arrange
+         var testData = _testDataRepo[testCase];
+         var inputJSON = testData.Item1;
+         var settings = testData.Item2;
+         var dummySourceNo = 6;
+         var xrecordSupplier = new JsonFeederForSource(new StringReader(inputJSON), dummySourceNo, settings, false);
+         var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
+         var actual = new List<Xrecord>();
+         var expected = testData.Item3;
+
+         //act
+         Xrecord elem;
+         while ((elem = ((Task<Xrecord>)xrecordSupplierPO.Invoke("SupplyNextXrecordAsync")).Result) != null)
+         {
+            actual.Add(elem);
+         }
+
+         //assert
+         actual.Count.Should().Be(expected.Count);
+         for (var i = 0; i < actual.Count; i++)
+         {
+            actual[i].Should().BeEquivalentTo(expected[i]);
+         }
+      }
+
+
       [TestMethod]
       public void ReadToEnd__ConsumesAllInput()
       {
@@ -1863,8 +1918,6 @@ namespace DataConveyer_tests.Intake
          var dummySourceNo = 6;
          var xrecordSupplier = new JsonFeederForSource(new StringReader(inputJSON), dummySourceNo, settings, false);
          var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
-         var actual = new List<Xrecord>();
-         var expected = testData.Item3;
 
          //act
          xrecordSupplier.ReadToEnd();
@@ -1872,6 +1925,28 @@ namespace DataConveyer_tests.Intake
 
             //assert
             elem.Should().BeNull();
+      }
+
+
+      [TestMethod]
+      public void ReadToEndAsync__ConsumesAllInput()
+      {
+         //This end-to-end integration test of JSON parsing verifies that EOD mark is supplied upon exhausting data on input
+
+         //arrange
+         var testData = _testDataRepo["Members_1"];
+         var inputJSON = testData.Item1;
+         var settings = testData.Item2;
+         var dummySourceNo = 6;
+         var xrecordSupplier = new JsonFeederForSource(new StringReader(inputJSON), dummySourceNo, settings, false);
+         var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
+
+         //act
+         xrecordSupplier.ReadToEndAsync().Wait();
+         var elem = (Task<Xrecord>)xrecordSupplierPO.Invoke("SupplyNextXrecordAsync");
+
+         //assert
+         elem.Result.Should().BeNull();
       }
 
    }

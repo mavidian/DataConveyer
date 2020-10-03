@@ -162,7 +162,7 @@ namespace Mavidian.DataConveyer.Intake
       /// <summary>
       /// Asynchronously consume the remainder of input stream, swallow its contents and the dispose the input
       /// </summary>
-      public async void ReadToEndAsync()
+      public async Task ReadToEndAsync()
       {
          while (await _jsonReader.ReadAsync()) { }
       }

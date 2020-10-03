@@ -156,6 +156,69 @@ namespace DataConveyer.Tests.Orchestrators_Intake
 
 
       [Fact]
+      public void ProcessXmlIntakeAsync_baseline_EmptyTraceBin()
+      {
+         //arrange
+         _config.AsyncIntake = true;
+         _config.XmlJsonIntakeSettings = "CollectionNode|Root,ClusterNode|Family/Members,RecordNode|Member,IncludeExplicitText|true";
+
+         var orchestrator = TestUtilities.GetTestOrchestrator(_config, "_clusteringBlock", _resultsExtractor);
+
+         //act
+         _ = orchestrator.ExecuteAsync();
+         _resultsExtractor.Completion.Wait();
+
+         //assert
+         var resultingClusters = _resultingClusters.ToList();
+
+         resultingClusters.Should().HaveCount(3);
+
+         var clstr = resultingClusters[0];
+         clstr.ClstrNo.Should().Be(1);
+         clstr.Count.Should().Be(2);
+         var rec = clstr[0];
+         rec.Count.Should().Be(6);
+         rec.RecNo.Should().Be(1);
+         rec.ClstrNo.Should().Be(1);
+         rec["ID"].Should().Be("1");
+         rec["FName"].Should().Be("Paul");
+         rec["Empty2"].Should().Be(string.Empty);
+         rec.TraceBin.Should().BeNull();
+
+         rec = clstr[1];
+         rec.Count.Should().Be(4);  //just 4 inner nodes (attributes are not included)
+         rec.RecNo.Should().Be(2);
+         rec.ClstrNo.Should().Be(1);
+         rec["ID"].Should().Be("2");
+         rec["FName"].Should().Be("John");  //attribute on the inner node doesn't matter
+         rec["LName"].Should().Be("Green");
+         rec["DOB"].Should().Be("8/23/1967");
+         rec.TraceBin.Should().BeNull();
+
+         clstr = resultingClusters[1];
+         clstr.ClstrNo.Should().Be(2);
+         clstr.Count.Should().Be(1);
+         rec = clstr[0];
+         rec.Count.Should().Be(4);  //5 inner nodes, but 1 dup
+         rec.ClstrNo.Should().Be(2);
+         rec["ID"].Should().Be("3");
+         rec["FName"].Should().Be("Joseph");  //dups ignored (by default)
+         rec["LName"].Should().Be("Doe");
+         rec["DOB"].Should().Be("11/6/1994");
+         rec.TraceBin.Should().BeNull();
+
+         clstr = resultingClusters[2];
+         clstr.ClstrNo.Should().Be(3);
+         clstr.Count.Should().Be(1);
+         rec = clstr[0];
+         rec.Count.Should().Be(1);
+         rec.ClstrNo.Should().Be(3);
+         rec["__explicitText__"].Should().Be("Empty member record");
+         rec.TraceBin.Should().BeNull();
+      }
+
+
+      [Fact]
       public void ProcessXmlIntake_AddClusterDataToTraceBin_TraceBinPopulated()
       {
          //arrange

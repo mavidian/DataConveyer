@@ -21,7 +21,6 @@ using Mavidian.DataConveyer.Common;
 using Mavidian.DataConveyer.Entities.KeyVal;
 using Mavidian.DataConveyer.Orchestrators;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks.Dataflow;
@@ -152,6 +151,72 @@ namespace DataConveyer.Tests.Orchestrators_Intake
          rec["LName"].Should().Be("Doe");
          rec["DOB"].Should().Be("11/6/1994");
       }
+
+
+      [Fact]
+      public void ProcessXmlIntakeAsync_ClstrOnIntakeAssigned_CorrectData()
+      {
+         //arrange
+         _config.AsyncIntake = true;
+         _config.AllowOnTheFlyInputFields = true;
+         _config.XmlJsonIntakeSettings = "ClusterNode|Family,RecordNode|Member";
+
+         var orchestrator = TestUtilities.GetTestOrchestrator(_config, "_clusteringBlock", _resultsExtractor);
+
+         //act
+         _ = orchestrator.ExecuteAsync();
+         _resultsExtractor.Completion.Wait();
+
+         //assert
+         var resultingClusters = _resultingClusters.ToList();
+
+         _resultingClusters.Should().HaveCount(3);  //3 clusters
+
+         var clstr = resultingClusters[0];
+         clstr.ClstrNo.Should().Be(1);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         var rec = clstr[0];
+         rec.Count.Should().Be(4);  // 4 inner nodes
+         rec.RecNo.Should().Be(1);
+         rec.ClstrNo.Should().Be(1);
+         rec["ID"].Should().Be("1");
+         rec["FName"].Should().Be("Paul");
+         rec["LName"].Should().Be("Smith");
+         rec["DOB"].Should().Be("1/12/1988");
+
+         clstr = resultingClusters[1];
+         clstr.ClstrNo.Should().Be(2);
+         clstr.Count.Should().Be(2);  //2 records in 2nd cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(4);  // 4 inner nodes
+         rec.RecNo.Should().Be(2);
+         rec.ClstrNo.Should().Be(2);
+         rec["ID"].Should().Be("2");
+         rec["FName"].Should().Be("John");
+         rec["LName"].Should().Be("Green");
+         rec["DOB"].Should().Be("8/23/1967");
+         rec = clstr[1];
+         rec.Count.Should().Be(4);  // 4 inner nodes
+         rec.RecNo.Should().Be(3);
+         rec.ClstrNo.Should().Be(2);
+         rec["ID"].Should().Be("4");
+         rec["FName"].Should().Be("Johny");
+         rec["LName"].Should().Be("Green");
+         rec["DOB"].Should().Be("5/3/1997");
+
+         clstr = resultingClusters[2];
+         clstr.ClstrNo.Should().Be(3);
+         clstr.Count.Should().Be(1);  //a single record cluster
+         rec = clstr[0];
+         rec.Count.Should().Be(4);  //4 inner nodes
+         rec.RecNo.Should().Be(4);
+         rec.ClstrNo.Should().Be(3);
+         rec["ID"].Should().Be("3");
+         rec["FName"].Should().Be("Joseph");
+         rec["LName"].Should().Be("Doe");
+         rec["DOB"].Should().Be("11/6/1994");
+      }
+
 
       [Fact]
       public void ProcessXmlIntake_ClstrOnIntakeWithClusterMarker_CorrectData()

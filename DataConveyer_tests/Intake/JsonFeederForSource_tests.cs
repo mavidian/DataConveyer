@@ -30,8 +30,8 @@ namespace DataConveyer_tests.Intake
    public class JsonFeederForSource_tests
    {
       // Test data is kept in this dictionary:
-      private Dictionary<string,               // testCase, i.e. key (e.g. Members_1_
-                         Tuple<string,         // inputXML
+      private Dictionary<string,               // testCase, i.e. key (e.g. Members_1
+                         Tuple<string,         // inputJSON
                                string,         // settings
                                List<Xrecord>   // expected
                               >

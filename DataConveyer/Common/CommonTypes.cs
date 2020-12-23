@@ -126,13 +126,17 @@ namespace Mavidian.DataConveyer.Common
       /// </summary>
       Arbitrary,
       /// <summary>
-      /// XML data. 
+      /// XML data (tabular).
       /// </summary>
       XML,
       /// <summary>
-      ///  JSON data.
+      ///  JSON data (tabular).
       /// </summary>
       JSON,
+      /// <summary>
+      ///  JSON data of unlimited hierarchy depth (subject to special field naming convention).
+      /// </summary>
+      UnboundJSON,
       /// <summary>
       /// An X12 document (EDI).
       /// </summary>

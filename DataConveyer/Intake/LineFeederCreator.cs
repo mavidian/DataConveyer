@@ -87,6 +87,7 @@ namespace Mavidian.DataConveyer.Intake
          if (inputDataKind == KindOfTextData.X12) return new X12FeederForSource(reader, sourceNo, x12SegmentDelimiter);
          if (inputDataKind == KindOfTextData.XML) return new XmlFeederForSource(reader, sourceNo, xmlJsonSettings, intakeIsAsync);
          if (inputDataKind == KindOfTextData.JSON) return new JsonFeederForSource(reader, sourceNo, xmlJsonSettings, intakeIsAsync);
+         if (inputDataKind == KindOfTextData.UnboundJSON) return new UnboundJsonFeederForSource(reader, sourceNo);
          throw new NotSupportedException($"Feeder type for {inputDataKind} could not be determined.");
       }
    }

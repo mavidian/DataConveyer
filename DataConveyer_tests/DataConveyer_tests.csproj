@@ -77,6 +77,7 @@
     <Compile Include="Intake\LineFeeder_Empty_tests.cs" />
     <Compile Include="Intake\LineFeeder_tests.cs" />
     <Compile Include="Intake\LineFeederForSource_tests.cs" />
+    <Compile Include="Intake\UnboundJsonFeederForSource_tests.cs" />
     <Compile Include="Intake\X12Feeder_tests.cs" />
     <Compile Include="Intake\X12ReadSegment_tests.cs" />
     <Compile Include="Intake\XmlFeederForSource_tests.cs" />

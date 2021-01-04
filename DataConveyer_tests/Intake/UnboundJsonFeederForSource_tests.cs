@@ -1,6 +1,6 @@
 ﻿//UnboundJsonFeederForSource_tests.cs
 //
-// Copyright © 2018-2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.
+// Copyright © 2020-2021 Mavidian Technologies Limited Liability Company. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace DataConveyer_tests.Intake
 {
@@ -62,12 +61,190 @@ namespace DataConveyer_tests.Intake
              }  //expected
                                                     ) //Tuple.Create
                           );  //Add SingleRecord
-#endregion SingleRecord
+         #endregion SingleRecord
+
+
+
+
+         #region SetOfRecords:
+         //set of top level JSON objects (technically not a valid JSON, but commonly used - interpreted the same
+         _testDataRepo.Add("SetOfRecords", Tuple.Create(
+//input:
+@"{
+  name: ""Jimmy"",
+  city: ""New York"",
+  age: 17
+}
+{
+  name: ""John"",
+  city: ""New York"",
+  age: 30
+}
+{
+  name: ""Sue"",
+  city: ""Chicago"",
+  age: 20
+}",
+             //expected:
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","John" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 30 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Sue" as object),
+                                                               Tuple.Create("city","Chicago" as object),
+                                                               Tuple.Create("age", 20 as object)
+                                                             }
+                           )
+             }  //expected
+                                                    ) //Tuple.Create
+                          );  //Add SetOfRecords
+#endregion SetOfRecords
+
+
+
+#region ArrayWithNoRecords:
+         //array with simple values (no records will be extracted)
+         _testDataRepo.Add("ArrayWithNoRecords", Tuple.Create(
+//input:
+@"[
+     ""Jimmy"",
+     ""Peter"",
+     ""John"",
+     ""Anna""
+]",
+             //expected:
+             new List<Xrecord>() //expected (no records)
+                                                             ) //Tuple.Create
+                          );  //Add SimpleArray
+#endregion SimpleArray
+
+
+#region ArrayOfSimpleRecords:
+         //array of simple records
+         _testDataRepo.Add("ArrayOfSimpleRecords", Tuple.Create(
+//input:
+@"[
+    {
+      name: ""Jimmy"",
+      city: ""New York"",
+      age: 17
+    },
+    {
+      name: ""John"",
+      city: ""New York"",
+      age: 30
+    },
+    {
+      name: ""Sue"",
+      city: ""Chicago"",
+      age: 20
+    }
+]",
+             //expected:
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","John" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 30 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Sue" as object),
+                                                               Tuple.Create("city","Chicago" as object),
+                                                               Tuple.Create("age", 20 as object)
+                                                             }
+                           )
+             }  //expected
+                                                    ) //Tuple.Create
+                          );  //Add ArrayOfSimpleRecords
+#endregion ArrayOfSimpleRecords
+
+
+#region ArrayOfComplexRecords:
+         //array of complex records
+         _testDataRepo.Add("ArrayOfComplexRecords", Tuple.Create(
+//input:
+@"[
+  {
+    ""name"": ""Jimmy"",
+    ""city"": ""New York"",
+    ""age"": 17
+  },
+  {
+    ""description"": ""This complex object contains nested arrays and objects"",
+    ""InnerArrayWithManyTypes"":
+    [
+       3,
+       ""string value"",
+       [ ""Array"", ""with"", ""strings"", ""in"", ""inner"", ""array"" ],
+       {
+             ""StringInObject"": ""in inner array"",
+             ""NumberInObjectInInnerArray"": 42,
+             ""ArrayWithNumbersInObjectInInnerArray"": [ 101, 66, 888, 5 ],
+             ""NestedObject"": { ""NumberInNestedObject"": 24, ""ArrayInNestedObject"": [ ""just"", 4, ""fun"" ] }
+       },
+       ""another string value"",
+       33
+    ]
+  }
+]",
+             //expected:
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("description", "This complex object contains nested arrays and objects" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[0]", 3 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[1]", "string value" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][0]", "Array" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][1]", "with" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][2]", "strings" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][3]", "in" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][4]", "inner" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][5]", "array" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].StringInObject", "in inner array" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NumberInObjectInInnerArray", 42 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[0]", 101 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[1]", 66 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[2]", 888 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[3]", 5 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.NumberInNestedObject", 24 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[0]", "just" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[1]", 4 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[2]", "fun" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[4]", "another string value" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[5]", 33 as object)
+                                                             }
+                           )
+             }  //expected
+                                                    ) //Tuple.Create
+                          );  //Add ArrayOfComplexRecords
+#endregion ArrayOfComplexRecords
+
       }
 
 
       [DataTestMethod]
       [DataRow("SingleRecord")]
+      [DataRow("SetOfRecords")]
+      [DataRow("ArrayWithNoRecords")]
+      [DataRow("ArrayOfSimpleRecords")]
+      [DataRow("ArrayOfComplexRecords")]
       public void UnboundJsonParsing_EndToEnd_CorrectData(string testCase)
       {
          //This is a series of end-to-end integration tests of unbound JSON parsing

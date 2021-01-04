@@ -36,9 +36,9 @@ namespace Mavidian.DataConveyer.Intake
          //Note that reader is passed to base class, even though it is not used there (all relevant methods are overridden, so null could've been passed instead).
          //This is because base.Dispose (called by Dispose in this class) disposes the reader (there is no public JsonReader.Dispose method).
          {
-            // Syntax rulese for unbound JSON:
+            // Syntax rules for unbound JSON:
             // 1. Each record is a (top-level) JSON object, i.e.  {..}.
-            // 2. Collection of records is either a top-level array of objects: [{..},..,{..}] or subsequent objects: {..}{..} (not a true JSON, but commonly used.
+            // 2. Collection of records is either a top-level array of objects: [{..},..,{..}] or subsequent objects: {..}{..} (not a true JSON, but commonly used).
             // 3. A column name is the same as Json.NET Path property; no implied column names.
             _jsonReader = new JsonTextReader(reader)
             {
@@ -101,13 +101,16 @@ namespace Mavidian.DataConveyer.Intake
       public IEnumerable<Tuple<string, object>> GetRecordFromJsonObject()
       {
          Debug.Assert(_jsonReader.TokenType == JsonToken.StartObject);
+         var initialPath = _jsonReader.Path;  // to be removed from compound column name
          int nestingLevel = 0;
          while (_jsonReader.Read())
          {
             var tokenType = _jsonReader.TokenType;
             if (_tokensThatAreValues.Contains(_jsonReader.TokenType))
             {
-               yield return Tuple.Create(_jsonReader.Path, _jsonReader.Value);
+               Debug.Assert(initialPath.Length == 0 || _jsonReader.Path.StartsWith(initialPath + "."));
+               var charsToTrimFromPath = initialPath.Length == 0 ? 0 : initialPath.Length + 1;
+               yield return Tuple.Create(_jsonReader.Path.Substring(charsToTrimFromPath), _jsonReader.Value);
             }
             else if (tokenType == JsonToken.StartObject) nestingLevel++;
             else if (tokenType == JsonToken.EndObject)

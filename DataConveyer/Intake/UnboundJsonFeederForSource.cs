@@ -93,11 +93,10 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
-      /// Read enough _jsonReader to determine subsequent record (i.e. until a value is encountered).
-      /// Sequence of flattened key-value pairs obtained from JSON input.
-      /// Key reflects the path to JSON element and uniquely defines each value.
+      /// Read enough _jsonReader to determine all values in current record.
+      /// Returned keys reflect the relative path to JSON elements and uniquely define each value.
       /// </summary>
-      /// <returns></returns>
+      /// <returns>Sequence of flattened key-value pairs obtained from JSON input.</returns>
       public IEnumerable<Tuple<string, object>> GetRecordFromJsonObject()
       {
          Debug.Assert(_jsonReader.TokenType == JsonToken.StartObject);
@@ -124,12 +123,51 @@ namespace Mavidian.DataConveyer.Intake
 
 
       /// <summary>
-      /// Asynchronously read enough _jsonReader to determine subsequent record (i.e. until a value is encountered).
+      /// Asynchronously read enough _jsonReader to determine subsequent record.
       /// </summary>
       /// <returns>A task with the next record read.</returns>
       private async Task<Xrecord> SupplyNextXrecordAsync()
       {
-         throw new NotImplementedException();
+         while (await _jsonReader.ReadAsync())
+         {
+            if (_jsonReader.TokenType == JsonToken.StartObject)
+            {
+               return new Xrecord(await GetRecordFromJsonObjectAsync());
+            }
+         }
+         return null;  // end of data
+      }
+
+
+      /// <summary>
+      /// Asynchronously read enough _jsonReader to determine all values in current record.
+      /// Returned keys reflect the relative path to JSON elements and uniquely define each value.
+      /// </summary>
+      /// <returns>A task with sequence of flattened key-value pairs obtained from JSON input.</returns>
+      public async Task<List<Tuple<string, object>>> GetRecordFromJsonObjectAsync()
+      {
+         //TODO: use IAsyncEnumerable instead of Task<IEnumerable>
+         Debug.Assert(_jsonReader.TokenType == JsonToken.StartObject);
+         var initialPath = _jsonReader.Path;  // to be removed from compound column name
+         int nestingLevel = 0;
+         var seqToReturn = new List<Tuple<string, object>>();
+         while (await _jsonReader.ReadAsync())
+         {
+            var tokenType = _jsonReader.TokenType;
+            if (_tokensThatAreValues.Contains(_jsonReader.TokenType))
+            {
+               Debug.Assert(initialPath.Length == 0 || _jsonReader.Path.StartsWith(initialPath + "."));
+               var charsToTrimFromPath = initialPath.Length == 0 ? 0 : initialPath.Length + 1;
+               seqToReturn.Add(Tuple.Create(_jsonReader.Path.Substring(charsToTrimFromPath), _jsonReader.Value));
+            }
+            else if (tokenType == JsonToken.StartObject) nestingLevel++;
+            else if (tokenType == JsonToken.EndObject)
+            {
+               if (nestingLevel == 0) return seqToReturn;
+               nestingLevel--;
+            }
+         }
+         throw new InvalidDataException("Unexpected end of data encountered.");
       }
 
 

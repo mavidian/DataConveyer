@@ -22,6 +22,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace DataConveyer_tests.Intake
 {
@@ -261,6 +262,40 @@ namespace DataConveyer_tests.Intake
          //act
          Xrecord elem;
          while ((elem = (Xrecord)xrecordSupplierPO.Invoke("SupplyNextXrecord")) != null)
+         {
+            actual.Add(elem);
+         }
+
+         //assert
+         actual.Count.Should().Be(expected.Count);
+         for (var i = 0; i < actual.Count; i++)
+         {
+            actual[i].Should().BeEquivalentTo(expected[i]);
+         }
+      }
+
+      [DataTestMethod]
+      [DataRow("SingleRecord")]
+      [DataRow("SetOfRecords")]
+      [DataRow("ArrayWithNoRecords")]
+      [DataRow("ArrayOfSimpleRecords")]
+      [DataRow("ArrayOfComplexRecords")]
+      public void UnboundJsonParsing_EndToEndAsync_CorrectData(string testCase)
+      {
+         //This is a series of end-to-end integration tests of asynchronous unbound JSON parsing
+
+         //arrange
+         var testData = _testDataRepo[testCase];
+         var inputJSON = testData.Item1;
+         var dummySourceNo = 42;
+         var xrecordSupplier = new UnboundJsonFeederForSource(new StringReader(inputJSON), dummySourceNo);
+         var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
+         var actual = new List<Xrecord>();
+         var expected = testData.Item2;
+
+         //act
+         Xrecord elem;
+         while ((elem = ((Task<Xrecord>)xrecordSupplierPO.Invoke("SupplyNextXrecordAsync")).Result) != null)
          {
             actual.Add(elem);
          }

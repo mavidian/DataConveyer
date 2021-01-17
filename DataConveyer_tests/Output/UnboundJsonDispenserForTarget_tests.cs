@@ -146,12 +146,305 @@ namespace DataConveyer_tests.Output
 #endregion Test_02
 
 
+#region Test_03
+         //"Happy path", ProduceClusters
+         _testDataRepo.Add("Test_03", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","1" as object),
+                                                               Tuple.Create("FName","Paul" as object),
+                                                               Tuple.Create("LName","Smith" as object),
+                                                               Tuple.Create("DOB", "1/12/1988" as object)
+                                                             },1
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","2" as object),
+                                                               Tuple.Create("FName","John" as object),
+                                                               Tuple.Create("LName","Green" as object),
+                                                               Tuple.Create("DOB", "8/23/1967" as object)
+                                                             },1
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","3" as object),
+                                                               Tuple.Create("FName","Joseph" as object),
+                                                               Tuple.Create("LName","Doe" as object),
+                                                               Tuple.Create("DOB", "11/6/1994" as object)
+                                                             },2
+                           )
+             },
+             //settings:
+             "ProduceClusters,IndentChars|   ",
+             //expected output
+             @"[
+   [
+      {
+         ""ID"": ""1"",
+         ""FName"": ""Paul"",
+         ""LName"": ""Smith"",
+         ""DOB"": ""1/12/1988""
+      },
+      {
+         ""ID"": ""2"",
+         ""FName"": ""John"",
+         ""LName"": ""Green"",
+         ""DOB"": ""8/23/1967""
+      }
+   ],
+   [
+      {
+         ""ID"": ""3"",
+         ""FName"": ""Joseph"",
+         ""LName"": ""Doe"",
+         ""DOB"": ""11/6/1994""
+      }
+   ]
+]"
+                                                 )  //Tuple.Create
+                          );  //Add Test_03
+#endregion Test_03
+
+
+#region Test_04
+         //"Happy path", ProduceClusters, ProduceMultipleObjects
+         _testDataRepo.Add("Test_04", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","1" as object),
+                                                               Tuple.Create("FName","Paul" as object),
+                                                               Tuple.Create("LName","Smith" as object),
+                                                               Tuple.Create("DOB", "1/12/1988" as object)
+                                                             },1
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","2" as object),
+                                                               Tuple.Create("FName","John" as object),
+                                                               Tuple.Create("LName","Green" as object),
+                                                               Tuple.Create("DOB", "8/23/1967" as object)
+                                                             },2
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("ID","3" as object),
+                                                               Tuple.Create("FName","Joseph" as object),
+                                                               Tuple.Create("LName","Doe" as object),
+                                                               Tuple.Create("DOB", "11/6/1994" as object)
+                                                             },2
+                           )
+             },
+             //settings:
+             "ProduceClusters,ProduceMultipleObjects,IndentChars|   ",
+             //expected output
+             @"[
+   {
+      ""ID"": ""1"",
+      ""FName"": ""Paul"",
+      ""LName"": ""Smith"",
+      ""DOB"": ""1/12/1988""
+   }
+]
+[
+   {
+      ""ID"": ""2"",
+      ""FName"": ""John"",
+      ""LName"": ""Green"",
+      ""DOB"": ""8/23/1967""
+   },
+   {
+      ""ID"": ""3"",
+      ""FName"": ""Joseph"",
+      ""LName"": ""Doe"",
+      ""DOB"": ""11/6/1994""
+   }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add Test_04
+#endregion Test_04
+
+
+#region Test_05
+         //Complex records (sorted)
+         _testDataRepo.Add("Test_05", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("description", "This complex object contains nested arrays and objects" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[0]", 3 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[1]", "string value" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][0]", "Array" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][1]", "with" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][2]", "strings" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][3]", "in" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][4]", "inner" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].StringInObject", "in inner array" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NumberInObjectInInnerArray", 42 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[0]", 101 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[1]", 66 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[2]", 888 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[3]", 5 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[0]", "just" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[1]", 4 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[2]", "fun" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[4]", "another string value" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.NumberInNestedObject", 24 as object),  // note the location of this item is outside of nesting hierarchy
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][5]", "array" as object),  // note the location of this item is outside of nesting hierarchy
+                                                               Tuple.Create("InnerArrayWithManyTypes[5]", 33 as object)
+                                                             }
+                           )
+             },
+             //settings:
+             "IndentChars|   ",
+             //expected output
+             @"[
+   {
+      ""name"": ""Jimmy"",
+      ""city"": ""New York"",
+      ""age"": 17
+   },
+   {
+      ""description"": ""This complex object contains nested arrays and objects"",
+      ""InnerArrayWithManyTypes"": [
+         3,
+         ""string value"",
+         [
+            ""Array"",
+            ""with"",
+            ""strings"",
+            ""in"",
+            ""inner"",
+            ""array""
+         ],
+         {
+            ""StringInObject"": ""in inner array"",
+            ""NumberInObjectInInnerArray"": 42,
+            ""ArrayWithNumbersInObjectInInnerArray"": [
+               101,
+               66,
+               888,
+               5
+            ],
+            ""NestedObject"": {
+               ""ArrayInNestedObject"": [
+                  ""just"",
+                  4,
+                  ""fun""
+               ],
+               ""NumberInNestedObject"": 24
+            }
+         },
+         ""another string value"",
+         33
+      ]
+   }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add Test_05
+         #endregion Test_05
+
+
+
+         #region Test_06
+         //Complex records, columns not presorted (not a recommended practice - elements are fragmented, but improves performance if columns are already groupped by nesting hierarchy).
+         _testDataRepo.Add("Test_06", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("description", "This complex object contains nested arrays and objects" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[0]", 3 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[1]", "string value" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][0]", "Array" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][1]", "with" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][2]", "strings" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][3]", "in" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][4]", "inner" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].StringInObject", "in inner array" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NumberInObjectInInnerArray", 42 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[0]", 101 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[1]", 66 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[2]", 888 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].ArrayWithNumbersInObjectInInnerArray[3]", 5 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[0]", "just" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[1]", 4 as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.ArrayInNestedObject[2]", "fun" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[4]", "another string value" as object),
+                                                               Tuple.Create("InnerArrayWithManyTypes[3].NestedObject.NumberInNestedObject", 24 as object),  // note the location of this item is outside of nesting hierarchy
+                                                               Tuple.Create("InnerArrayWithManyTypes[2][5]", "array" as object),  // note the location of this item is outside of nesting hierarchy
+                                                               Tuple.Create("InnerArrayWithManyTypes[5]", 33 as object)
+                                                             }
+                           )
+             },
+             //settings:
+             "SkipColumnPresorting,IndentChars|   ",
+             //expected output
+             @"[
+   {
+      ""name"": ""Jimmy"",
+      ""city"": ""New York"",
+      ""age"": 17
+   },
+   {
+      ""description"": ""This complex object contains nested arrays and objects"",
+      ""InnerArrayWithManyTypes"": [
+         3,
+         ""string value"",
+         [
+            ""Array"",
+            ""with"",
+            ""strings"",
+            ""in"",
+            ""inner""
+         ],
+         {
+            ""StringInObject"": ""in inner array"",
+            ""NumberInObjectInInnerArray"": 42,
+            ""ArrayWithNumbersInObjectInInnerArray"": [
+               101,
+               66,
+               888,
+               5
+            ],
+            ""NestedObject"": {
+               ""ArrayInNestedObject"": [
+                  ""just"",
+                  4,
+                  ""fun""
+               ]
+            }
+         },
+         ""another string value"",
+         {
+            ""NestedObject"": {
+               ""NumberInNestedObject"": 24
+            }
+         },
+         [
+            ""array""
+         ],
+         33
+      ]
+   }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add Test_06
+         #endregion Test_06
+
+
       }  //Initialize
 
 
       [DataTestMethod]
       [DataRow("Test_01")]
       [DataRow("Test_02")]
+      [DataRow("Test_03")]
+      [DataRow("Test_04")]
+      [DataRow("Test_05")]
+      [DataRow("Test_06")]
       public void JsonWriting_EndToEnd_CorrectData(string testCase)
       {
          //This is an end-to-end integration test of JSON writing

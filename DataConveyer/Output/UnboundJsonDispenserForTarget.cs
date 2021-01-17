@@ -41,16 +41,8 @@ namespace Mavidian.DataConveyer.Output
       private readonly bool _produceClusters; // if present, all objects (records) are enclosed in arrays, where each array represents a cluster; if absent (default), clusters are ignored.
       private readonly bool _skipColumnPresorting; // if present, no pre-sorting of keys (column names) occurs - performance feature, but JSON hierarchy may be off; if absent (default), columns are groupped by segments (in order of appearance.
 
-      //////Discrete settings determined by the ctor (with possible adjustments in InitiateDispensing):
-      ////private readonly List<string> _recNodePath;
-      ////private List<string> _collNodePath, _clstrNodePath;
-      ////private bool _observeClusters;  //true if non-empty ClusterNode setting is present
-
-      ////private int _collNodeCount, _clstrNodeCount, _recNodeCount;  //number of nested nodes constituting CollectionNode, ClusterNode and RecordNode paths respectively
-
       private int _currClstrNo;  // 1-based last cluster number (0=before 1st cluster)
       private bool _atStart;
-      private bool _after1stRecord;
 
       /// <summary>
       /// Creates an instance of a JSON dispenser for a single target.
@@ -75,20 +67,7 @@ namespace Mavidian.DataConveyer.Output
          _produceClusters = settingDict.ContainsKey("ProduceClusters");
          _skipColumnPresorting = settingDict.ContainsKey("SkipColumnPresorting");
 
-         ////// Discrete settings to unpack:
-         //////    CollectionNode   - "xpath" defining the collection of clusters/records (may be null/empty, in which case output will contain XML fragment where each root constitutes record or cluster).
-         //////    ClusterNode      - "xpath" defining clusters node within collection node (null/empty means record nodes are directly inside collection node).
-         //////    RecordNode       - "xpath" defining record node within cluster node (or collection node if cluster node is empty). RecordNode is mandatory, if absent "__record__" is assumed.
-         //////    AttributeFields  - a semicolon-separated list of field names (item keys) to be projected into XML as attributes of the record node (and not inner nodes).
-         //////    IndentChars      - string to use when indenting, e.g. "\t" or "  "; allows "pretty-print" JSON output; when absent, no indenting takes place. Due to JSON.NET library limitation, the string must consist of identical characters.
-         ////// "xpath" is always relative (no need for ./), each of the nodes is separated by /.
-         ////_collNodePath = settingDict.GetStringSetting("CollectionNode").ToJsonNodePath();
-         ////_clstrNodePath = settingDict.GetStringSetting("ClusterNode").ToJsonNodePath();
-         ////_recNodePath = settingDict.GetStringSetting("RecordNode").ToJsonNodePath();
          var indentChars = settingDict.GetStringSetting("IndentChars");
-         
-         ////_observeClusters = _clstrNodePath?.Any() ?? false;  //same as _clstrNodePath != null && _clstrNodePath.Any()
-         ////_collNodeCount = _clstrNodeCount = _recNodeCount = 0;  //will be set in InitiateDispensing
 
          var jsonWriter = new JsonTextWriter(writer);
       
@@ -108,7 +87,6 @@ namespace Mavidian.DataConveyer.Output
 
          _currClstrNo = 0;
          _atStart = true;
-         _after1stRecord = false;
       }
 
 
@@ -126,22 +104,16 @@ namespace Mavidian.DataConveyer.Output
 
          if (_atStart)  //Very first call
          {
-            ////_atStart = false;  //not thread-safe, but single-threaded
             InitiateDispensing(line.ClstrNo);
          }
 
-         ////if (_observeClusters && line.ClstrNo != _currClstrNo)  //new cluster
-         ////{  //Close _clstrNodePath and start a new one
-         ////   Debug.Assert(_clstrNodePath.Any());
-         ////   WriteCloseNodes(_recNodeCount);
-         ////   WriteStartNodes(_recNodePath, true);  //no need to update _recNodeCount (it's been aleady set in InitiateDispensign)
-         ////   _currClstrNo = line.ClstrNo;
-         ////}
-
-
          if (_produceClusters && line.ClstrNo != _currClstrNo)
-         {
-            if (!_atStart) _jsonWriter.WriteEndArray();
+         {  //new cluster
+            if (!_atStart)
+            {
+               _jsonWriter.WriteEndArray();
+               if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented) _underlyingWriter.WriteLine();  // an extra new line to help in "pretty printing"
+            }
             _jsonWriter.WriteStartArray();
             _currClstrNo = line.ClstrNo;
          }
@@ -172,14 +144,6 @@ namespace Mavidian.DataConveyer.Output
          }
 
          //TODO: implement
-
-         ////if (_observeClusters && line.ClstrNo != _currClstrNo)  //new cluster
-         ////{  //Close _clstrNodePath and start a new one
-         ////   Debug.Assert(_clstrNodePath.Any());
-         ////   await WriteCloseNodesAsync(_recNodeCount);
-         ////   await WriteStartNodesAsync(_recNodePath, true);  //no need to update _recNodeCount (it's been aleady set in InitiateDispensign)
-         ////   _currClstrNo = line.ClstrNo;
-         ////}
 
          await WriteXrecordAsync(line); //write record contents
       }
@@ -212,7 +176,6 @@ namespace Mavidian.DataConveyer.Output
          //TODO: implement
 
          if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to 
-         ////await WriteCloseNodesAsync(_collNodeCount + _clstrNodeCount + _recNodeCount);
          await _jsonWriter.FlushAsync();
       }
 
@@ -235,42 +198,6 @@ namespace Mavidian.DataConveyer.Output
       private void InitiateDispensing(int firstClstrNo)
       {
          if (!_produceMultipleObjects) _jsonWriter.WriteStartArray();
-
-
-         //////Special case: _recNodePath may be absent/null to indicate each record being its own JSON object without any sort of wrapper
-         //////              (akin to XML fragments, technically not a valid JSON)
-         //////              If so, then CollectionNode and ClusterNode must also be null.
-         ////if (!_recNodePath?.Any() ?? true)
-         ////{ //here,  RecordNode is absent; check CollectionNode and ClusterNodes, if any is present then reset it
-         ////   if (_collNodePath?.Any() ?? false)
-         ////   {  //Collection node is present
-         ////      _collNodePath = null;
-         ////      this.LogWarning("CollectionNode cannot be present in JSON output settings if RecordNode is absent; CollectionNode is being ignored.");
-         ////   }
-         ////   if (_observeClusters)
-         ////   {  //ClusterNode is present
-         ////      _clstrNodePath = null;
-         ////      _observeClusters = false;
-         ////      this.LogWarning("ClusterNode cannot be present in JSON output settings if RecordNode is absent; ClusterNode is being ignored.");
-         ////   }
-         ////}
-
-         ////if (_collNodePath?.Any() ?? false)
-         ////{  //Collection node is present
-         ////   _collNodeCount = WriteStartNodes(_collNodePath, false);
-         ////}
-
-         ////if (_observeClusters)
-         ////{  //ClusterNode is present
-         ////   _clstrNodeCount = WriteStartNodes(_clstrNodePath, true);
-         ////   _currClstrNo = firstClstrNo;
-         ////}
-
-         ////if (_recNodePath?.Any() ?? false)
-         ////{  //RecordNode is present
-         ////   _recNodeCount = WriteStartNodes(_recNodePath, true);
-         ////}
-         ////else Debug.Assert(!_collNodePath?.Any() ?? true && !_observeClusters);
       }
 
 
@@ -283,142 +210,7 @@ namespace Mavidian.DataConveyer.Output
       {
          //TODO: implement
 
-         //////Special case: _recNodePath may be absent/null to indicate each record being its own JSON object without any sort of wrapper
-         //////              (akin to XML fragments, technically not a valid JSON)
-         //////              If so, then CollectionNode and ClusterNode must also be null.
-         ////if (!_recNodePath?.Any() ?? true)
-         ////{ //here,  RecordNode is absent; check CollectionNode and ClusterNodes, if any is present then reset it
-         ////   if (_collNodePath?.Any() ?? false)
-         ////   {  //Collection node is present
-         ////      _collNodePath = null;
-         ////      this.LogWarning("CollectionNode cannot be present in JSON output settings if RecordNode is absent; CollectionNode is being ignored.");
-         ////   }
-         ////   if (_observeClusters)
-         ////   {  //ClusterNode is present
-         ////      _clstrNodePath = null;
-         ////      _observeClusters = false;
-         ////      this.LogWarning("ClusterNode cannot be present in JSON output settings if RecordNode is absent; ClusterNode is being ignored.");
-         ////   }
-         ////}
-
-         ////if (_collNodePath?.Any() ?? false)
-         ////{  //Collection node is present
-         ////   _collNodeCount = await WriteStartNodesAsync(_collNodePath, false);
-         ////}
-
-         ////if (_observeClusters)
-         ////{  //ClusterNode is present
-         ////   _clstrNodeCount = await WriteStartNodesAsync(_clstrNodePath, true);
-         ////   _currClstrNo = firstClstrNo;
-         ////}
-
-         ////if (_recNodePath?.Any() ?? false)
-         ////{  //RecordNode is present
-         ////   _recNodeCount = await WriteStartNodesAsync(_recNodePath, true);
-         ////}
-         ////else Debug.Assert(!_collNodePath?.Any() ?? true && !_observeClusters);
       }
-
-
-      /////// <summary>
-      /////// Write a series of start object nodes.
-      /////// </summary>
-      /////// <param name="nodesToWrite">Nodes constituting collection, cluster or record.</param>
-      /////// <param name="arrayAtEnd">true to write array start after the nodes (cluster and record), false otherwise (collection).</param>
-      /////// <returns>Number of nodes written.</returns>
-      ////private int WriteStartNodes(IEnumerable<string> nodesToWrite, bool arrayAtEnd)
-      ////{
-      ////   Debug.Assert(nodesToWrite.Any());
-
-      ////   bool nonEmptyNodeExists = false;  //to verify if writing array at end should be skipped
-
-      ////   int retVal = 0;
-
-      ////   foreach (var node in nodesToWrite)
-      ////   {
-      ////      if (node.Length > 0)
-      ////      {
-      ////         _jsonWriter.WriteStartObject();
-      ////         _jsonWriter.WritePropertyName(node);
-      ////         nonEmptyNodeExists = true;
-      ////      }
-      ////      else //empty node name
-      ////      {  // instead of an object with an empty name, write an array
-      ////         _jsonWriter.WriteStartArray();
-      ////      }
-      ////      retVal++;
-      ////   }
-
-      ////   // Generally, arrayAtEnd should be true when starting cluster and record, but false for collection.
-      ////   // However, if all nodes to write are empty, then don't add array at end.
-      ////   // This is because "one empty node serves as no node" - note that null ClusterNode and RecordNode
-      ////   // cannot serve as "no node" as it has special meaning ("don't observe clusters" and "each record own JSON" respectively)
-
-      ////   if (arrayAtEnd && nonEmptyNodeExists) { _jsonWriter.WriteStartArray(); retVal++;  }
-
-      ////   return retVal;
-      ////}
-
-
-      /////// <summary>
-      /////// Asynchronously write a series of start object nodes.
-      /////// </summary>
-      /////// <param name="nodesToWrite">Nodes constituting collection, cluster or record.</param>
-      /////// <param name="arrayAtEnd">true to write array start after the nodes (cluster and record), false otherwise (collection).</param>
-      /////// <returns>Task with a number of start nodes written.</returns>
-      ////private async Task<int> WriteStartNodesAsync(IEnumerable<string> nodesToWrite, bool arrayAtEnd)
-      ////{
-      ////   Debug.Assert(nodesToWrite.Any());
-
-      ////   bool nonEmptyNodeExists = false;  //to verify if writing array at end should be skipped
-
-      ////   int retVal = 0;
-
-      ////   foreach (var node in nodesToWrite)
-      ////   {
-      ////      if (node.Length > 0)
-      ////      {
-      ////         await _jsonWriter.WriteStartObjectAsync();
-      ////         await _jsonWriter.WritePropertyNameAsync(node);
-      ////         nonEmptyNodeExists = true;
-      ////      }
-      ////      else //empty node name
-      ////      {  // instead of an object with an empty name, write an array
-      ////         await _jsonWriter.WriteStartArrayAsync();
-      ////      }
-      ////      retVal++;
-      ////   }
-
-      ////   // Generally, arrayAtEnd should be true when starting cluster and record, but false for collection.
-      ////   // However, if all nodes to write are empty, then don't add array at end.
-      ////   // This is because "one empty node serves as no node" - note that null ClusterNode and RecordNode
-      ////   // cannot serve as "no node" as it has special meaning ("don't observe clusters" and "each record own JSON" respectively)
-
-      ////   if (arrayAtEnd && nonEmptyNodeExists) { await _jsonWriter.WriteStartArrayAsync(); retVal++; }
-
-      ////   return retVal;
-      ////}
-
-
-      /////// <summary>
-      /////// Write a series of ending brackets.
-      /////// </summary>
-      /////// <param name="howMany">Number of consecutive nodes (levels, i.e. arrays or objects) to close.</param>
-      ////private void WriteCloseNodes(int howMany)
-      ////{
-      ////   while (howMany-- > 0) _jsonWriter.WriteEnd();
-      ////}
-
-
-      /////// <summary>
-      /////// Asynchronously write a series of ending brackets.
-      /////// </summary>
-      /////// <param name="howMany">Number of consecutive nodes (levels, i.e. arrays or objects) to close.</param>
-      /////// <returns></returns>
-      ////private async Task WriteCloseNodesAsync(int howMany)
-      ////{
-      ////   while (howMany-- > 0) await _jsonWriter.WriteEndAsync();
-      ////}
 
 
       /// <summary>
@@ -429,7 +221,7 @@ namespace Mavidian.DataConveyer.Output
       {
          Debug.Assert(line.GetType() == typeof(Xrecord));
 
-         if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented && _after1stRecord)
+         if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented && !_atStart && !_produceClusters)
          {  //we're starting a new JSON document here (technically not a valid JSON)
             //add an extra new line to help in "pretty printing"
             _underlyingWriter.WriteLine();
@@ -438,13 +230,7 @@ namespace Mavidian.DataConveyer.Output
 
          WriteItems(_skipColumnPresorting ? line.Items : PresortItems(line.Items));
 
-         ////foreach (var item in line.Items)
-         ////{
-         ////   _jsonWriter.WritePropertyName(item.Item1); //key
-         ////   _jsonWriter.WriteValue(item.Item2);  //TODO: Consider strongly typed values (when Item2 becomes of object type, not string)
-         ////}
          _jsonWriter.WriteEndObject();
-         _after1stRecord = true;
       }
 
 
@@ -454,16 +240,10 @@ namespace Mavidian.DataConveyer.Output
       /// <param name="items">Key-value pairs where Key reflects path to JSON element using special convention (undersore-delimited hierarchy of element names or array names with indeces). Represents a single record.</param>
       public void WriteItems(IEnumerable<Tuple<string,object>> items)
       {  // Item: Item1 = Key, Item2 = Value
-    ///     bool? isArray = null;
          var prevKey = new Stack<LorC>();
          prevKey.Push(new LorC("dummy")); //will get removed
          foreach (var item in items)
          {
-            ////if (isArray == null)
-            ////{
-            ////   isArray = item.Key.StartsWith("[");
-            ////   if ((bool)isArray) _jsonWriter.WriteStartArray(); else _jsonWriter.WriteStartObject();
-            ////}
             var segments = SplitColumnName(item.Item1);
             var unchangedSegmentsCount = segments.Zip(prevKey.Reverse(), (f, s) => Tuple.Create(f,s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
             while (prevKey.Count > unchangedSegmentsCount + 1)
@@ -490,11 +270,6 @@ namespace Mavidian.DataConveyer.Output
             }
             _jsonWriter.WriteValue(item.Item2);
          }
-         ////if (isArray != null)  // null if empty items
-         ////{
-         ////   if ((bool)isArray) _jsonWriter.WriteEndArray();
-         ////   else _jsonWriter.WriteEndObject();
-         ////}
       }
 
 
@@ -561,7 +336,9 @@ namespace Mavidian.DataConveyer.Output
       {
          Debug.Assert(line.GetType() == typeof(Xrecord));
 
-         if (_jsonWriter.Formatting == Formatting.Indented && _after1stRecord)
+         //TODO: implement
+
+         if (_jsonWriter.Formatting == Formatting.Indented && !_atStart)
          {  //we're starting a new JSON document here (technically not a valid JSON)
             //add an extra new line to help in "pretty printing"
             await _underlyingWriter.WriteLineAsync();
@@ -574,7 +351,6 @@ namespace Mavidian.DataConveyer.Output
             await _jsonWriter.WriteValueAsync(item.Item2);  //TODO: Consider strongly typed values (when Item2 becomes of object type, not string)
          }
          await _jsonWriter.WriteEndObjectAsync();
-         _after1stRecord = true;
       }
 
    }

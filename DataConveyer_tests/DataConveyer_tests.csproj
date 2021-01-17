@@ -102,6 +102,7 @@
     <Compile Include="Output\SimpleOutputConsumer_tests.cs" />
     <Compile Include="Output\LineDispenserForTarget_tests.cs" />
     <Compile Include="Output\LineDispenser_tests.cs" />
+    <Compile Include="Output\UnboundJsonDispenserForTarget_tests.cs" />
     <Compile Include="Output\XmlDispenserForTarget_tests.cs" />
     <Compile Include="Output\XrecordOutputProvider_tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

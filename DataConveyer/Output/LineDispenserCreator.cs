@@ -83,6 +83,7 @@ namespace Mavidian.DataConveyer.Output
          if (outputDataKind == KindOfTextData.X12) return new X12DispenserForTarget(writer, targetNo, x12SegmentDelimiter);
          if (outputDataKind == KindOfTextData.XML) return new XmlDispenserForTarget(writer, targetNo, xmlSettings, outputIsAsync);
          if (outputDataKind == KindOfTextData.JSON) return new JsonDispenserForTarget(writer, targetNo, xmlSettings, outputIsAsync);
+         if (outputDataKind == KindOfTextData.UnboundJSON) return new UnboundJsonDispenserForTarget(writer, targetNo, xmlSettings);
          throw new NotSupportedException($"Dispenser type for {outputDataKind} could not be determined.");
       }
    }

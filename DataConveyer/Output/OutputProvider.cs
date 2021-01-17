@@ -182,6 +182,7 @@ namespace Mavidian.DataConveyer.Output
                var allItemTypes = ItemType.Void | ItemType.Bool | ItemType.DateTime | ItemType.Decimal | ItemType.Int | ItemType.String;
                return new XrecordOutputProvider(allItemTypes, config, globalCache);
             case KindOfTextData.JSON:
+            case KindOfTextData.UnboundJSON:
                return new XrecordOutputProvider(ItemType.DateTime, config, globalCache);
             default:
                //TODO: Message - fatal error, undetermined type of output data

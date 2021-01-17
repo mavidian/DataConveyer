@@ -139,13 +139,23 @@ namespace Mavidian.DataConveyer.Output
 
          if (_atStart)  //Very first call
          {
-            _atStart = false;  //not thread-safe, but single-threaded
             await InitiateDispensingAsync(line.ClstrNo);
          }
 
-         //TODO: implement
+         if (_produceClusters && line.ClstrNo != _currClstrNo)
+         {  //new cluster
+            if (!_atStart)
+            {
+               await _jsonWriter.WriteEndArrayAsync();
+               if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented) _underlyingWriter.WriteLine();  // an extra new line to help in "pretty printing"
+            }
+            await _jsonWriter.WriteStartArrayAsync();
+            _currClstrNo = line.ClstrNo;
+         }
 
          await WriteXrecordAsync(line); //write record contents
+
+         _atStart = false;
       }
 
 
@@ -159,7 +169,6 @@ namespace Mavidian.DataConveyer.Output
          if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to
          if (_produceClusters) _jsonWriter.WriteEndArray();
          if (!_produceMultipleObjects) _jsonWriter.WriteEndArray();
-         ////       WriteCloseNodes(_collNodeCount + _clstrNodeCount + _recNodeCount);
          _jsonWriter.Flush();
       }
 
@@ -172,10 +181,9 @@ namespace Mavidian.DataConveyer.Output
       {
          //This method is intended to be called by LineDispenser (owner) upon receiving EOD mark. At that point, we are at end of
          // last record - let's close open nodes (we're closing them explicitly even though XmlWriter could do it upon closing).
-
-         //TODO: implement
-
-         if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to 
+         if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to
+         if (_produceClusters) _jsonWriter.WriteEndArray();
+         if (!_produceMultipleObjects) _jsonWriter.WriteEndArray();
          await _jsonWriter.FlushAsync();
       }
 
@@ -208,8 +216,7 @@ namespace Mavidian.DataConveyer.Output
       /// <returns></returns>
       private async Task InitiateDispensingAsync(int firstClstrNo)
       {
-         //TODO: implement
-
+         if (!_produceMultipleObjects) await _jsonWriter.WriteStartArrayAsync();
       }
 
 
@@ -235,10 +242,10 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
-      /// Send a sequence of key-value pairs as a JSON hierarchy to a text writer.
+      /// Send a sequence of key-value pairs as a JSON hierarchy to JSON output.
       /// </summary>
-      /// <param name="items">Key-value pairs where Key reflects path to JSON element using special convention (undersore-delimited hierarchy of element names or array names with indeces). Represents a single record.</param>
-      public void WriteItems(IEnumerable<Tuple<string,object>> items)
+      /// <param name="items">Key-value pairs where Key is the path to a JSON element. Represents a single record.</param>
+      private void WriteItems(IEnumerable<Tuple<string,object>> items)
       {  // Item: Item1 = Key, Item2 = Value
          var prevKey = new Stack<LorC>();
          prevKey.Push(new LorC("dummy")); //will get removed
@@ -328,7 +335,7 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
-      /// Asynchronously end items of the current record to JSON output.
+      /// Asynchronously send items of the current record to JSON output.
       /// </summary>
       /// <param name="line"></param>
       /// <returns></returns>
@@ -336,22 +343,58 @@ namespace Mavidian.DataConveyer.Output
       {
          Debug.Assert(line.GetType() == typeof(Xrecord));
 
-         //TODO: implement
-
-         if (_jsonWriter.Formatting == Formatting.Indented && !_atStart)
+         if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented && !_atStart && !_produceClusters)
          {  //we're starting a new JSON document here (technically not a valid JSON)
             //add an extra new line to help in "pretty printing"
             await _underlyingWriter.WriteLineAsync();
          }
+
          await _jsonWriter.WriteStartObjectAsync();
-         foreach (var item in line.Items)
-         {
-            //note that unlike XML, JSON does not support attributes, so we know that every item has to be written as inner node
-            await _jsonWriter.WritePropertyNameAsync(item.Item1); //key
-            await _jsonWriter.WriteValueAsync(item.Item2);  //TODO: Consider strongly typed values (when Item2 becomes of object type, not string)
-         }
+
+         await WriteItemsAsync(_skipColumnPresorting ? line.Items : PresortItems(line.Items));
+
          await _jsonWriter.WriteEndObjectAsync();
       }
+
+
+      /// <summary>
+      /// Asynchronously send a sequence of key-value pairs as a JSON hierarchy to JSON output.
+      /// </summary>
+      /// <param name="items">Key-value pairs where Key is the path to a JSON element. Represents a single record.</param>
+      private async Task WriteItemsAsync(IEnumerable<Tuple<string, object>> items)
+      {  // Item: Item1 = Key, Item2 = Value
+         var prevKey = new Stack<LorC>();
+         prevKey.Push(new LorC("dummy")); //will get removed
+         foreach (var item in items)
+         {
+            var segments = SplitColumnName(item.Item1);
+            var unchangedSegmentsCount = segments.Zip(prevKey.Reverse(), (f, s) => Tuple.Create(f, s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
+            while (prevKey.Count > unchangedSegmentsCount + 1)
+            {
+               var segment = prevKey.Pop();
+               if (segment.IsLabel) await _jsonWriter.WriteEndObjectAsync(); else await _jsonWriter.WriteEndArrayAsync();
+            }
+            prevKey.Pop();
+
+            bool first = true;
+            foreach (var segment in segments.Skip(unchangedSegmentsCount))
+            {
+               if (segment.IsLabel)
+               {
+                  if (!first) await _jsonWriter.WriteStartObjectAsync();
+                  await _jsonWriter.WritePropertyNameAsync(segment.Label);
+               }
+               else //IsCounter
+               {
+                  if (!first) await _jsonWriter.WriteStartArrayAsync();
+               }
+               first = false;
+               prevKey.Push(segment);
+            }
+            await _jsonWriter.WriteValueAsync(item.Item2);
+         }
+      }
+
 
    }
 }

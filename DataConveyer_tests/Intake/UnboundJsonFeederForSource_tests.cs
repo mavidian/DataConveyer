@@ -280,7 +280,7 @@ namespace DataConveyer_tests.Intake
       [DataRow("ArrayWithNoRecords")]
       [DataRow("ArrayOfSimpleRecords")]
       [DataRow("ArrayOfComplexRecords")]
-      public void UnboundJsonParsing_EndToEndAsync_CorrectData(string testCase)
+      public void UnboundJsonParsingAsync_EndToEnd_CorrectData(string testCase)
       {
          //This is a series of end-to-end integration tests of asynchronous unbound JSON parsing
 

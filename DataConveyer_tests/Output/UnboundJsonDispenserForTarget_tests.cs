@@ -471,9 +471,13 @@ namespace DataConveyer_tests.Output
       [DataTestMethod]
       [DataRow("Test_01")]
       [DataRow("Test_02")]
+      [DataRow("Test_03")]
+      [DataRow("Test_04")]
+      [DataRow("Test_05")]
+      [DataRow("Test_06")]
       public void JsonWritingAsync_EndToEnd_CorrectData(string testCase)
       {
-         //This is an end-to-end integration test of JSON writing
+         //This is an end-to-end integration test of asynchronous JSON writing
 
          //arrange
          var testData = _testDataRepo[testCase];

@@ -63,9 +63,9 @@ namespace Mavidian.DataConveyer.Output
          //    SkipColumnPresorting   - if present, the keys (field names) are processed in order appearing (better perfrormance); if absent, keys are groupped by segments to assure proper JSON hierarchy nesting 
          //    IndentChars            - string to use when indenting, e.g. "\t" or "  "; allows "pretty-print" JSON output; when absent, no indenting takes place. Due to JSON.NET library limitation, the string must consist of identical characters.
 
-         _produceMultipleObjects = settingDict.ContainsKey("ProduceMultipleObjects");
-         _produceClusters = settingDict.ContainsKey("ProduceClusters");
-         _skipColumnPresorting = settingDict.ContainsKey("SkipColumnPresorting");
+         _produceMultipleObjects = settingDict?.ContainsKey("ProduceMultipleObjects") ?? false;
+         _produceClusters = settingDict?.ContainsKey("ProduceClusters") ?? false;
+         _skipColumnPresorting = settingDict?.ContainsKey("SkipColumnPresorting") ?? false;
 
          var indentChars = settingDict.GetStringSetting("IndentChars");
 

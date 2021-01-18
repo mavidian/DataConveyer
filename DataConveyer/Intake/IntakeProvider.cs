@@ -232,6 +232,7 @@ namespace Mavidian.DataConveyer.Intake
                return new X12IntakeProvider(config, globalCache, typeDefinitions, x12DelimitersForOutput);
             case KindOfTextData.XML:
             case KindOfTextData.JSON:
+            case KindOfTextData.UnboundJSON:
                return new XrecordIntakeProvider(config, globalCache, typeDefinitions);
             default:
                //TODO: Message - fatal error, undetermined type of intake data

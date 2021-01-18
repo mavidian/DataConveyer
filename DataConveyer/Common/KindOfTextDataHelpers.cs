@@ -44,6 +44,7 @@ namespace Mavidian.DataConveyer.Common
             case KindOfTextData.X12:
             case KindOfTextData.XML:
             case KindOfTextData.JSON:
+            case KindOfTextData.UnboundJSON:
                //"speedy" data kinds, they can start output without knowing the output fields
                return false;
             case KindOfTextData.Delimited:
@@ -71,7 +72,8 @@ namespace Mavidian.DataConveyer.Common
             case KindOfTextData.X12:
             case KindOfTextData.XML:
             case KindOfTextData.JSON:
-               //records of these kinds "can grow", i.e. it possible for fields to be added on the fly
+            case KindOfTextData.UnboundJSON:
+               //records of these kinds "can grow", i.e. it is possible for fields to be added on the fly
                return true;
             case KindOfTextData.Raw:
             case KindOfTextData.Flat:
@@ -129,6 +131,7 @@ namespace Mavidian.DataConveyer.Common
                return Common.ExternalLineType.Xsegment;
             case KindOfTextData.XML:
             case KindOfTextData.JSON:
+            case KindOfTextData.UnboundJSON:
                return Common.ExternalLineType.Xrecord;
             default:
                return Common.ExternalLineType.Xtext;

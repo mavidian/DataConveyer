@@ -260,22 +260,24 @@ namespace Mavidian.DataConveyer.Output
             }
             prevKey.Pop();
 
-            bool first = true;
+            bool first = true; int innerLvls = 0;
             foreach (var segment in segments.Skip(unchangedSegmentsCount))
             {
                if (segment.IsLabel)
                {
-                  if (!first) _jsonWriter.WriteStartObject();
+                  if (!first) { _jsonWriter.WriteStartObject(); innerLvls++; }
                   _jsonWriter.WritePropertyName(segment.Label);
                }
                else //IsCounter
                {
-                  if (!first) _jsonWriter.WriteStartArray();
+                  if (!first) { _jsonWriter.WriteStartArray(); innerLvls++; }
                }
                first = false;
                prevKey.Push(segment);
             }
             _jsonWriter.WriteValue(item.Item2);
+
+            for (int i = 0; i < innerLvls; i++) _jsonWriter.WriteEnd();
          }
       }
 
@@ -286,7 +288,7 @@ namespace Mavidian.DataConveyer.Output
       /// </summary>
       /// <param name="items">A sequence of key value pairs where key is a compound column name.</param>
       /// <returns>A sequence of sorted key value pairs.</returns>
-      public IEnumerable<Tuple<string,object>> PresortItems(IEnumerable<Tuple<string,object>> items)
+      public static IEnumerable<Tuple<string,object>> PresortItems(IEnumerable<Tuple<string,object>> items)
       {  // Item: Item1 = Key, Item2 = Value
          var wrappedItems = items.Select(i => Tuple.Create(i.Item1.Split('.', '['), i));  // Item1 is a "wrapper", i.e. an array of segments of the compound Key (note that array indices will contain closing brackets, but it doesn't matter)
          return SortWrappedData(wrappedItems).Select(wi => wi.Item2);
@@ -300,18 +302,17 @@ namespace Mavidian.DataConveyer.Output
       /// </summary>
       /// <param name="wrappedItems"></param>
       /// <returns></returns>
-      private IEnumerable<Tuple<string[], Tuple<string, object>>> SortWrappedData(IEnumerable<Tuple<string[], Tuple<string,object>>> wrappedItems)
+      private static IEnumerable<Tuple<string[], Tuple<string, object>>> SortWrappedData(IEnumerable<Tuple<string[], Tuple<string, object>>> wrappedItems)
       {  // WrappedItem: Item1 = Wrapper, Item2 = Item
-         var grouppedItems = wrappedItems.GroupBy(wi => wi.Item1[0]);  //wrappedItems: Item1 = Wrapper, Item2 = Item
+         var groupedItems = wrappedItems.GroupBy(wi => wi.Item1.Length == 0 ? null : wi.Item1[0]);  //wrappedItems: Item1 = Wrapper, Item2 = Item
+         if (groupedItems == null) yield break;
          // Notice that segments are groupped in order of appearance. So, array elements are not sorted by index.
-         foreach (var group in grouppedItems)
+         foreach (var group in groupedItems)
          {
-            if (group.Count() == 1) yield return group.First();  // end of recursion (note that compound keys are assumed to be unique)
-            else
-            {  // remove top (groupped by) segment from the Wrapper when recursing
-               var innerGroup = group.Select(wi => Tuple.Create(wi.Item1.Skip(1).ToArray(), wi.Item2));
-               foreach (var wi in SortWrappedData(innerGroup)) yield return wi;
-            }
+            // Remove top (grouped by) segment from the Wrapper when recursing
+            var innerGroup = group.Select(wi => Tuple.Create(wi.Item1.Skip(1).ToArray(), wi.Item2));
+            if (innerGroup.Count() == 1 && !innerGroup.First().Item1.Any()) yield return group.First();  // end of recursion (note that keys are unique, so only a single item exists w/o inner items)
+            else foreach (var wi in SortWrappedData(innerGroup)) yield return wi;
          }
       }
 

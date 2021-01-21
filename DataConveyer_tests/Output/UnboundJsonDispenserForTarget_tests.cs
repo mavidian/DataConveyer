@@ -295,7 +295,13 @@ namespace DataConveyer_tests.Output
                                                                Tuple.Create("InnerArrayWithManyTypes[2][5]", "array" as object),  // note the location of this item is outside of nesting hierarchy
                                                                Tuple.Create("InnerArrayWithManyTypes[5]", 33 as object)
                                                              }
-                           )
+                            )
+                ////new Xrecord(new List<Tuple<string,object>>() {
+                 ////                                              //Tuple.Create("InnerArrayWithManyTypes[0].NestedObject.ArrayInNestedObject[0]", 4 as object),
+                 ////                                              //Tuple.Create("InnerArrayWithManyTypes[0].NestedObject.NumberInNestedObject", 24 as object),
+                 ////                                              //Tuple.Create("InnerArrayWithManyTypes[1]", 33 as object)
+                 ////                                              Tuple.Create("A[0]", 33 as object)
+                 ////                                            }                          )
              },
              //settings:
              "IndentChars|   ",
@@ -439,7 +445,7 @@ namespace DataConveyer_tests.Output
 
 
 #region TestCase_07
-         //Simple tabular records
+         // Simple records (no nesting)
          _testDataRepo.Add("TestCase_07", Tuple.Create(
              //records to output
              new List<Xrecord>
@@ -494,12 +500,131 @@ namespace DataConveyer_tests.Output
 ]"
                                                  )  //Tuple.Create
                           );  //Add TestCase_07
-#endregion TestCase_07
+         #endregion TestCase_07
 
 
 #region TestCase_08
-         //Complex tabular records, grouped by by year
+         //Simple array
          _testDataRepo.Add("TestCase_08", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+
+                 new Xrecord(new List<Tuple<string, object>>() {
+                                                               Tuple.Create("Arr[0]", 33 as object)
+                                                             }
+                            )
+             },
+             //settings:
+             "IndentChars|   ",
+             //expected output
+             @"[
+   {
+      ""Arr"": [
+         33
+      ]
+   }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add TestCase_08
+#endregion TestCase_08
+
+
+#region TestCase_09
+         //Simple object
+         _testDataRepo.Add("TestCase_09", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+
+                 new Xrecord(new List<Tuple<string, object>>() {
+                                                               Tuple.Create("Obj.Prop", 55 as object)
+                                                             }
+                            )
+             },
+             //settings:
+             "SkipColumnPresorting,IndentChars|   ",
+             //expected output
+             @"[
+   {
+      ""Obj"": {
+         ""Prop"": 55
+      }
+   }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add TestCase_09
+#endregion TestCase_09
+
+
+#region TestCase_10
+         // Simple records (no nesting)
+         _testDataRepo.Add("TestCase_10", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State","Alabama" as object),
+                                                               Tuple.Create("2009.Population",0 as object),
+                                                               Tuple.Create("2009.Drivers",3782284 as object),
+                                                               Tuple.Create("2009.Vehicles", 4610850 as object),
+                                                               Tuple.Create("2010.Population",4785514 as object),
+                                                               Tuple.Create("2010.Drivers",3805751 as object),
+                                                               Tuple.Create("2010.Vehicles", 4653840 as object)
+                                                             }
+                           ),
+               new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State", "Arizona" as object),
+                                                               Tuple.Create("2009.Population",0 as object),
+                                                               Tuple.Create("2009.Drivers",4403390 as object),
+                                                               Tuple.Create("2009.Vehicles", 4357630 as object),
+                                                               Tuple.Create("2010.Population",6407342 as object),
+                                                               Tuple.Create("2010.Drivers",4443647 as object),
+                                                               Tuple.Create("2010.Vehicles", 4320010 as object)
+                                                             }
+                           )
+             },
+             //settings:
+             "IndentChars|  ",
+             //expected output
+             @"[
+  {
+    ""State"": ""Alabama"",
+    ""2009"": {
+      ""Population"": 0,
+      ""Drivers"": 3782284,
+      ""Vehicles"": 4610850
+    },
+    ""2010"": {
+      ""Population"": 4785514,
+      ""Drivers"": 3805751,
+      ""Vehicles"": 4653840
+    }
+  },
+  {
+    ""State"": ""Arizona"",
+    ""2009"": {
+      ""Population"": 0,
+      ""Drivers"": 4403390,
+      ""Vehicles"": 4357630
+    },
+    ""2010"": {
+      ""Population"": 6407342,
+      ""Drivers"": 4443647,
+      ""Vehicles"": 4320010
+    }
+  }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add TestCase_10
+#endregion TestCase_10
+
+
+// ---------------- Data for "error" tests below ---------------
+// These tests do not yield JSON data as their Xrecord key sequences are not representable by valid JSON.
+
+
+#region ErrTestCase_01
+         //Conflict in Year element definition
+         _testDataRepo.Add("ErrTestCase_01", Tuple.Create(
              //records to output
              new List<Xrecord>
              {
@@ -527,38 +652,16 @@ namespace DataConveyer_tests.Output
              },
              //settings:
              "IndentChars|   ",
-             //expected output
-             @"[
-   {
-      ""State"": ""Alabama"",
-      ""Year"": ""2009"",
-      ""Population"": 0,
-      ""Drivers"": 3782284,
-      ""Vehicles"": 4610850
-   },
-   {
-      ""State"": ""Alabama"",
-      ""Year"": ""2010"",
-      ""Population"": 4785514,
-      ""Drivers"": 3805751,
-      ""Vehicles"": 4653840
-   },
-   {
-      ""State"": ""Wyoming"",
-      ""Year"": ""2010"",
-      ""Population"": 582328,
-      ""Drivers"": 0,
-      ""Vehicles"": 0
-   }
-]"
+             //expected output (irrelevant - (JSON object cannot have a value w/o a key; unlike 'explicit' text allowed in XML)
+             @"--- not representable in JSON (note conflict in Year element definition - it needs to be either JSON value or JSON object, not both) ---"
                                                  )  //Tuple.Create
-                          );  //Add TestCase_08
-         #endregion TestCase_08
+                          );  //Add ErrTestCase_01
+#endregion ErrTestCase_01
 
 
-         #region TestCase_09
-         //Complex tabular records, grouped by by state & year
-         _testDataRepo.Add("TestCase_09", Tuple.Create(
+#region ErrTestCase_02
+         //Conflict in State element definition
+         _testDataRepo.Add("ErrTestCase_02", Tuple.Create(
              //records to output
              new List<Xrecord>
              {
@@ -586,36 +689,39 @@ namespace DataConveyer_tests.Output
              },
              //settings:
              "IndentChars|   ",
-             //expected output
-             @"[
-   {
-      ""State"": ""Alabama"",
-      ""Year"": ""2009"",
-      ""Population"": 0,
-      ""Drivers"": 3782284,
-      ""Vehicles"": 4610850
-   },
-   {
-      ""State"": ""Alabama"",
-      ""Year"": ""2010"",
-      ""Population"": 4785514,
-      ""Drivers"": 3805751,
-      ""Vehicles"": 4653840
-   },
-   {
-      ""State"": ""Wyoming"",
-      ""Year"": ""2010"",
-      ""Population"": 582328,
-      ""Drivers"": 0,
-      ""Vehicles"": 0
-   }
-]"
+             //expected output (irrelevant - (JSON object cannot have a value w/o a key; unlike 'explicit' text allowed in XML)
+             @"--- not representable in JSON (note conflict in State element definition - it needs to be either JSON value or JSON object, not both) ---"
                                                  )  //Tuple.Create
-                          );  //Add TestCase_09
-#endregion TestCase_09
+                          );  //Add ErrTestCase_02
+#endregion ErrTestCase_02
 
 
-// ---------------- Data for PresortItems test below ---------------
+
+#region ErrTestCase_03
+         //duplicate value
+         _testDataRepo.Add("ErrTestCase_03", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+
+                 new Xrecord(new List<Tuple<string, object>>() {
+                                                               Tuple.Create("Val", 777 as object),
+                                                               Tuple.Create("Val", 777 as object)
+                                                             }
+                            )
+             },
+             //settings:
+             "SkipColumnPresorting,IndentChars|   ",  // note that an attempt to sort would result in stack overflow
+             //expected output (irrelevant - (JSON doesn't allow key to be repeated)
+             @"--- not representable in JSON ---"
+
+                                                 )  //Tuple.Create
+                          );  //Add ErrTestCase_03
+#endregion ErrTestCase_03
+
+
+
+// ---------------- Data for PresortItems tests below ---------------
 // Tuples: Item1=Key, Item2=Value
 // Items need to be ordered by Key segments in order of appearance.
 // Item values indicate the order of the items.
@@ -643,7 +749,7 @@ namespace DataConveyer_tests.Output
          #endregion SortTest_02
 
 
-         #region SortTest_03
+#region SortTest_03
          //complex keys, mixed order
          _sortTestData.Add("SortTest_03", new List<Tuple<string, object>>() {
                                                                 Tuple.Create("State.Year.Population",1 as object),
@@ -655,7 +761,7 @@ namespace DataConveyer_tests.Output
          #endregion SortTest_03
 
 
-         #region SortTest_04
+#region SortTest_04
          //complex keys with inner arrays
          _sortTestData.Add("SortTest_04", new List<Tuple<string, object>>() {
                                                                 Tuple.Create("Years[0][1].Drivers",1 as object),
@@ -668,10 +774,10 @@ namespace DataConveyer_tests.Output
                                                                 Tuple.Create("Years[1][1].Vehicles",7 as object),
                                                                 Tuple.Create("Years[1][1].Population",8 as object)
                                                              });
-         #endregion SortTest_04
+#endregion SortTest_04
 
 
-         #region SortTest_05
+#region SortTest_05
          //complex keys with arrays
          _sortTestData.Add("SortTest_05", new List<Tuple<string, object>>() {
                                                                 Tuple.Create("description", 1 as object),
@@ -709,6 +815,10 @@ namespace DataConveyer_tests.Output
       [DataRow("TestCase_07")]
       [DataRow("TestCase_08")]
       [DataRow("TestCase_09")]
+      [DataRow("TestCase_10")]
+      //[DataRow("ErrTestCase_01")]
+      //[DataRow("ErrTestCase_02")]
+      //[DataRow("ErrTestCase_03")]
       public void JsonWriting_EndToEnd_CorrectData(string testCase)
       {
          //This is an end-to-end integration test of JSON writing
@@ -787,73 +897,6 @@ namespace DataConveyer_tests.Output
             ((int)resultingItems[i].Item2).Should().Be(((int)resultingItems[i - 1].Item2) + 1);
          }
       }
-
-
-      ////[TestMethod]
-      ////public void PresortItems_ComplexItems_CorrectOrder()
-      ////{
-      ////   // Tuples: Item1=Key, Item2=Value
-      ////   // Items need to be ordered by Key segments in order of appearance.
-      ////   // Item values indicate the order of the items.
-
-      ////   //arrange
-      ////   var itemsToSort = new List<Tuple<string, object>>() { Tuple.Create("State",1 as object),
-      ////                                                         Tuple.Create("State.Year.Population",3 as object),
-      ////                                                         Tuple.Create("State.Year",2 as object),
-      ////                                                         Tuple.Create("State.Year.Drivers",4 as object),
-      ////                                                         Tuple.Create("State.Year.Vehicles", 5 as object)
-      ////                                                      };
-
-      ////   //act
-      ////   var resultingItems = UnboundJsonDispenserForTarget.PresortItems(itemsToSort).ToList();
-
-      ////   //assert
-      ////   resultingItems.Count.Should().Be(itemsToSort.Count);
-      ////   for (int i = 1; i < resultingItems.Count; i++)
-      ////   {
-      ////      ((int)resultingItems[i].Item2).Should().Be(((int)resultingItems[i - 1].Item2) + 1);
-      ////   }
-      ////}
-
-
-      ////[TestMethod]
-      ////public void PresortItems_ComplexItemsWithArrays_CorrectOrder()
-      ////{
-      ////   // Tuples: Item1=Key, Item2=Value
-      ////   // Items need to be ordered by Key segments in order of appearance.
-      ////   // Item values indicate the order of the items.
-
-      ////   //arrange
-      ////   var itemsToSort = new List<Tuple<string, object>>() { Tuple.Create("description", 1 as object),
-      ////                                                         Tuple.Create("InnerArray[0]", 2 as object),
-      ////                                                         Tuple.Create("InnerArray[4]", 3 as object),  // note array indices don't matter (order of appearance instead)
-      ////                                                         Tuple.Create("InnerArray[4][0]", 4 as object),
-      ////                                                         Tuple.Create("InnerArray[4][2]", 5 as object),
-      ////                                                         Tuple.Create("InnerArray[4][1]", 6 as object),
-      ////                                                         Tuple.Create("InnerArray[4][4]", 7 as object),
-      ////                                                         Tuple.Create("InnerArray[3].String", 9 as object),
-      ////                                                         Tuple.Create("InnerArray[3].Number", 10 as object),
-      ////                                                         Tuple.Create("InnerArray[3].InnerArray[0]", 11 as object),  // OK to have the same named segments
-      ////                                                         Tuple.Create("InnerArray[3].InnerArray[1]", 12 as object),
-      ////                                                         Tuple.Create("InnerArray[3].InnerArray[3]", 13 as object),
-      ////                                                         Tuple.Create("InnerArray[3].NestedObject.NestedArray[1]", 15 as object),
-      ////                                                         Tuple.Create("InnerArray[3].NestedObject.NestedArray[2]", 16 as object),
-      ////                                                         Tuple.Create("InnerArray[4][3]", 8 as object),
-      ////                                                         Tuple.Create("InnerArray[3].NestedObject.NestedArray[0]", 17 as object),
-      ////                                                         Tuple.Create("InnerArray[2]", 18 as object),  // again, order of appearance, not an index (InnerArray[2] shows here for the 1st time)
-      ////                                                         Tuple.Create("InnerArray[3].InnerArray[2]", 14 as object)
-      ////                                                       };
-
-      ////   //act
-      ////   var resultingItems = UnboundJsonDispenserForTarget.PresortItems(itemsToSort).ToList();
-
-      ////   //assert
-      ////   resultingItems.Count.Should().Be(itemsToSort.Count);
-      ////   for (int i = 1; i < resultingItems.Count; i++)
-      ////   {
-      ////      ((int)resultingItems[i].Item2).Should().Be(((int)resultingItems[i - 1].Item2) + 1);
-      ////   }
-      ////}
 
    }
 }

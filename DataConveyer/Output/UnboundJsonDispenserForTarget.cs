@@ -242,53 +242,13 @@ namespace Mavidian.DataConveyer.Output
 
 
       /// <summary>
-      /// Send a sequence of key-value pairs as a JSON hierarchy to JSON output.
-      /// </summary>
-      /// <param name="items">Key-value pairs where Key is the path to a JSON element. Represents a single record.</param>
-      private void WriteItems(IEnumerable<Tuple<string,object>> items)
-      {  // Item: Item1 = Key, Item2 = Value
-         var prevKey = new Stack<LorC>();
-         prevKey.Push(new LorC("dummy")); //will get removed
-         foreach (var item in items)
-         {
-            var segments = SplitColumnName(item.Item1);
-            var unchangedSegmentsCount = segments.Zip(prevKey.Reverse(), (f, s) => Tuple.Create(f,s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
-            while (prevKey.Count > unchangedSegmentsCount + 1)
-            {
-               var segment = prevKey.Pop();
-               if (segment.IsLabel) _jsonWriter.WriteEndObject(); else _jsonWriter.WriteEndArray();
-            }
-            prevKey.Pop();
-
-            bool first = true; int innerLvls = 0;
-            foreach (var segment in segments.Skip(unchangedSegmentsCount))
-            {
-               if (segment.IsLabel)
-               {
-                  if (!first) { _jsonWriter.WriteStartObject(); innerLvls++; }
-                  _jsonWriter.WritePropertyName(segment.Label);
-               }
-               else //IsCounter
-               {
-                  if (!first) { _jsonWriter.WriteStartArray(); innerLvls++; }
-               }
-               first = false;
-               prevKey.Push(segment);
-            }
-            _jsonWriter.WriteValue(item.Item2);
-
-            for (int i = 0; i < innerLvls; i++) _jsonWriter.WriteEnd();
-         }
-      }
-
-
-      /// <summary>
       /// Sort data in a way to facilitate creation of nested JSON hierarchy.
       /// All top key segments are groupped together (in order of first appearance), then 2nd key segments are groupped together, etc.
       /// </summary>
       /// <param name="items">A sequence of key value pairs where key is a compound column name.</param>
       /// <returns>A sequence of sorted key value pairs.</returns>
-      public static IEnumerable<Tuple<string,object>> PresortItems(IEnumerable<Tuple<string,object>> items)
+      internal static IEnumerable<Tuple<string, object>> PresortItems(IEnumerable<Tuple<string, object>> items)
+      //TODO: make private (and refactor unit tests to use private accessor intead of direct call)
       {  // Item: Item1 = Key, Item2 = Value
          var wrappedItems = items.Select(i => Tuple.Create(i.Item1.Split('.', '['), i));  // Item1 is a "wrapper", i.e. an array of segments of the compound Key (note that array indices will contain closing brackets, but it doesn't matter)
          return SortWrappedData(wrappedItems).Select(wi => wi.Item2);
@@ -315,6 +275,56 @@ namespace Mavidian.DataConveyer.Output
             else foreach (var wi in SortWrappedData(innerGroup)) yield return wi;
          }
       }
+      /// <summary>
+      /// Send a sequence of key-value pairs as a JSON hierarchy to JSON output.
+      /// </summary>
+      /// <param name="items">Key-value pairs where Key is the path to a JSON element. Represents a single record.</param>
+      private void WriteItems(IEnumerable<Tuple<string,object>> items)
+      {  // Item: Item1 = Key, Item2 = Value
+         // The Key is divided into segments, e.g. the segements of Arr[3].Obj.InnArr[2] are Arr, 3, Obj, InnArr and 2.
+         // Each segment is represented by Label or Counter; which in turn corresponds to JSON object, array element or value based on the segment that follows it, like so:
+         //   Arr    - Label   - JSON array (as it is followed by a Counter)
+         //   3      - Counter - JSON object (as it is followed by a Label)
+         //   Obj    - Label   - JSON object (as it is followed by a Label)
+         //   InnArr - Label   - JSON array (as it is followed by a Counter)
+         //   2      - Counter - JSON value (as it is the last element)
+         var segmentsSoFar = new Stack<LorC>(); // reflect current/previous nesting on JSON output
+         segmentsSoFar.Push(new LorC("dummy~!`'&^%$???")); // starting point ("previously output path"); will get removed (as long as no match with actual key)
+         foreach (var item in items)
+         {
+            var currSegments = SplitColumnName(item.Item1);
+            var unchangedSegmentsCount = currSegments.Zip(segmentsSoFar.Reverse(), (f, s) => Tuple.Create(f,s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
+            while (segmentsSoFar.Skip(unchangedSegmentsCount + 1).Any())  // equivalent to while (keySegmentsSoFar.Count > unchangedSegmentsCount + 1), but more efficient
+            {
+               WriteEndBracketToJson(segmentsSoFar.Pop());
+            }
+            segmentsSoFar.Pop();
+            // Here, segmentsSoFar contains segments that are common with prior item.
+            bool valueFlag = true;  // otherwise, either an object or array
+            foreach (var segment in currSegments.Skip(unchangedSegmentsCount))
+            {
+               if (segment.IsLabel)
+               {
+                  if (!valueFlag)
+                     _jsonWriter.WriteStartObject();
+                  _jsonWriter.WritePropertyName(segment.Label);
+               }
+               else //IsCounter
+               {
+                  if (!valueFlag)
+                     _jsonWriter.WriteStartArray();
+               }
+               valueFlag = false;
+               segmentsSoFar.Push(segment);
+            }
+            _jsonWriter.WriteValue(item.Item2);
+         }
+         // Close all "pending" objects and arrays, but not the value (marked above by 'valueFlag') 
+         while (segmentsSoFar.Skip(1).Any())  // equivalent to while (keySegmentsSoFar.Count > 1)
+         {
+            WriteEndBracketToJson(segmentsSoFar.Pop());
+         }
+      }
 
 
       /// <summary>
@@ -328,10 +338,23 @@ namespace Mavidian.DataConveyer.Output
 
          foreach (var item in items)
          {
-            yield return char.IsDigit(item[0])
+            yield return item.Last() == ']'
                         ? new LorC(int.Parse(item.TrimEnd(']')))  // counter
                         : new LorC(item);  // label
          }
+      }
+
+
+      /// <summary>
+      /// Write end of either object or array to JSON output.
+      /// </summary>
+      /// <param name="segment">Label or Counter object.</param>
+      private void WriteEndBracketToJson(LorC segment)
+      {
+         if (segment.IsLabel)
+            _jsonWriter.WriteEndObject();
+         else
+            _jsonWriter.WriteEndArray();
       }
 
 

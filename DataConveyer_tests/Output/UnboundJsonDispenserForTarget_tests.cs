@@ -297,12 +297,6 @@ namespace DataConveyer_tests.Output
                                                                Tuple.Create("InnerArrayWithManyTypes[5]", 33 as object)
                                                              }
                             )
-                ////new Xrecord(new List<Tuple<string,object>>() {
-                 ////                                              //Tuple.Create("InnerArrayWithManyTypes[0].NestedObject.ArrayInNestedObject[0]", 4 as object),
-                 ////                                              //Tuple.Create("InnerArrayWithManyTypes[0].NestedObject.NumberInNestedObject", 24 as object),
-                 ////                                              //Tuple.Create("InnerArrayWithManyTypes[1]", 33 as object)
-                 ////                                              Tuple.Create("A[0]", 33 as object)
-                 ////                                            }                          )
              },
              //settings:
              "IndentChars|   ",
@@ -558,7 +552,6 @@ namespace DataConveyer_tests.Output
 #endregion TestCase_09
 
 
-
 #region TestCase_10
          //Complex records, not a realistic scenario, but illustration of how Data Conveyer writes unbound JSON.
          //This is an example of bad input data that Data Conveyer is able to make sense of and create a valid JSON.
@@ -627,7 +620,7 @@ namespace DataConveyer_tests.Output
 
 
 #region TestCase_11
-         // Simple records (no nesting)
+         // Records by state with nested objects by year
          _testDataRepo.Add("TestCase_11", Tuple.Create(
              //records to output
              new List<Xrecord>
@@ -687,7 +680,213 @@ namespace DataConveyer_tests.Output
 #endregion TestCase_11
 
 
+#region TestCase_12
+         // A single record with nested objects by year and state (note that numbers are expressed as strings here)
+         _testDataRepo.Add("TestCase_12", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("2009.Alabama.Population", "" as object),
+                                                               Tuple.Create("2009.Alabama.Drivers","3782284" as object),
+                                                               Tuple.Create("2009.Alabama.Vehicles", "4610850" as object),
+                                                               Tuple.Create("2009.Arizona.Population","" as object),
+                                                               Tuple.Create("2009.Arizona.Drivers","4403390" as object),
+                                                               Tuple.Create("2009.Arizona.Vehicles","4357630" as object),
+                                                               Tuple.Create("2010.Alabama.Population","4785514" as object),
+                                                               Tuple.Create("2010.Alabama.Drivers","3805751" as object),
+                                                               Tuple.Create("2010.Alabama.Vehicles", "4653840" as object),
+                                                               Tuple.Create("2010.Arizona.Population","6407342" as object),
+                                                               Tuple.Create("2010.Arizona.Drivers","4443647" as object),
+                                                               Tuple.Create("2010.Arizona.Vehicles", "4320010" as object)
+                                                            }
+                           )
+             },
+             //settings:
+             "ProduceStandaloneObjects,IndentChars|  ",
+             //expected output
+             @"{
+  ""2009"": {
+    ""Alabama"": {
+      ""Population"": """",
+      ""Drivers"": ""3782284"",
+      ""Vehicles"": ""4610850""
+    },
+    ""Arizona"": {
+      ""Population"": """",
+      ""Drivers"": ""4403390"",
+      ""Vehicles"": ""4357630""
+    }
+  },
+  ""2010"": {
+    ""Alabama"": {
+      ""Population"": ""4785514"",
+      ""Drivers"": ""3805751"",
+      ""Vehicles"": ""4653840""
+    },
+    ""Arizona"": {
+      ""Population"": ""6407342"",
+      ""Drivers"": ""4443647"",
+      ""Vehicles"": ""4320010""
+    }
+  }
+}"
+                                                 )  //Tuple.Create
+                          );  //Add TestCase_12
+         #endregion TestCase_12
 
+
+#region TestCase_13
+         // A single record with nested arrays of states and then years
+         _testDataRepo.Add("TestCase_13", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("States[0].Alabama.Years[0].2009.Population", "" as object),
+                                                               Tuple.Create("States[0].Alabama.Years[0].2009.Drivers","3782284" as object),
+                                                               Tuple.Create("States[0].Alabama.Years[0].2009.Vehicles", "4610850" as object),
+                                                               Tuple.Create("States[0].Alabama.Years[1].2010.Population","4785514" as object),
+                                                               Tuple.Create("States[0].Alabama.Years[1].2010.Drivers","3805751" as object),
+                                                               Tuple.Create("States[0].Alabama.Years[1].2010.Vehicles","4653840" as object),
+                                                               Tuple.Create("States[1].Arizona.Years[0].2009.Population","" as object),
+                                                               Tuple.Create("States[1].Arizona.Years[0].2009.Drivers","4403390" as object),
+                                                               Tuple.Create("States[1].Arizona.Years[0].2009.Vehicles", "4357630" as object),
+                                                               Tuple.Create("States[1].Arizona.Years[1].2010.Population","6407342" as object),
+                                                               Tuple.Create("States[1].Arizona.Years[1].2010.Drivers","4443647" as object),
+                                                               Tuple.Create("States[1].Arizona.Years[1].2010.Vehicles", "4320010" as object)
+                                                            }
+                           )
+             },
+             //settings:
+             "ProduceStandaloneObjects,IndentChars|  ",
+             //expected output
+             @"{
+  ""States"": [
+    {
+      ""Alabama"": {
+        ""Years"": [
+          {
+            ""2009"": {
+              ""Population"": """",
+              ""Drivers"": ""3782284"",
+              ""Vehicles"": ""4610850""
+            }
+          },
+          {
+            ""2010"": {
+              ""Population"": ""4785514"",
+              ""Drivers"": ""3805751"",
+              ""Vehicles"": ""4653840""
+            }
+          }
+        ]
+      }
+    },
+    {
+      ""Arizona"": {
+        ""Years"": [
+          {
+            ""2009"": {
+              ""Population"": """",
+              ""Drivers"": ""4403390"",
+              ""Vehicles"": ""4357630""
+            }
+          },
+          {
+            ""2010"": {
+              ""Population"": ""6407342"",
+              ""Drivers"": ""4443647"",
+              ""Vehicles"": ""4320010""
+            }
+          }
+        ]
+      }
+    }
+  ]
+}"
+                                                 )  //Tuple.Create
+                          );  //Add TestCase_13
+         #endregion TestCase_13
+
+
+#region TestCase_14
+         // Records by year with nested arrays by state
+         _testDataRepo.Add("TestCase_14", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("Year","2009" as object),
+                                                               Tuple.Create("States[0][0]", "Alabama" as object),
+                                                               Tuple.Create("States[0][1].Population",0 as object),
+                                                               Tuple.Create("States[0][1].Drivers",3782284 as object),
+                                                               Tuple.Create("States[0][1].Vehicles", 4610850 as object),
+                                                               Tuple.Create("States[1][0]", "Arizona" as object),
+                                                               Tuple.Create("States[1][1].Population", 0 as object),
+                                                               Tuple.Create("States[1][1].Drivers",4403390 as object),
+                                                               Tuple.Create("States[1][1].Vehicles", 4357630 as object)
+                                                             }
+                           ),
+               new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("Year", "2010" as object),
+                                                               Tuple.Create("States[0][0]", "Alabama" as object),
+                                                               Tuple.Create("States[0][1].Population",4785514 as object),
+                                                               Tuple.Create("States[0][1].Drivers",3805751 as object),
+                                                               Tuple.Create("States[0][1].Vehicles", 4653840 as object),
+                                                               Tuple.Create("States[1][0]", "Arizona" as object),
+                                                               Tuple.Create("States[1][1].Population",6407342 as object),
+                                                               Tuple.Create("States[1][1].Drivers",4443647 as object),
+                                                               Tuple.Create("States[1][1].Vehicles", 4320010 as object)
+                                                             }
+                           )
+             },
+             //settings:
+             "IndentChars|  ",
+             //expected output
+             @"[
+  {
+    ""Year"": ""2009"",
+    ""States"": [
+      [
+        ""Alabama"",
+        {
+          ""Population"": 0,
+          ""Drivers"": 3782284,
+          ""Vehicles"": 4610850
+        }
+      ],
+      [
+        ""Arizona"",
+        {
+          ""Population"": 0,
+          ""Drivers"": 4403390,
+          ""Vehicles"": 4357630
+        }
+      ]
+    ]
+  },
+  {
+    ""Year"": ""2010"",
+    ""States"": [
+      [
+        ""Alabama"",
+        {
+          ""Population"": 4785514,
+          ""Drivers"": 3805751,
+          ""Vehicles"": 4653840
+        }
+      ],
+      [
+        ""Arizona"",
+        {
+          ""Population"": 6407342,
+          ""Drivers"": 4443647,
+          ""Vehicles"": 4320010
+        }
+      ]
+    ]
+  }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add TestCase_14
+#endregion TestCase_14
 
 
 // ---------------- Data for "error" tests below ---------------
@@ -862,6 +1061,8 @@ namespace DataConveyer_tests.Output
       [DataRow("TestCase_09")]
       [DataRow("TestCase_10")]
       [DataRow("TestCase_11")]
+      [DataRow("TestCase_12")]
+      [DataRow("TestCase_13")]
       public void JsonWriting_EndToEnd_CorrectData(string testCase)
       {
          //This is an end-to-end integration test of JSON writing

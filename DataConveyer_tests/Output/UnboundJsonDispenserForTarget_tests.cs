@@ -1118,6 +1118,13 @@ namespace DataConveyer_tests.Output
       [DataRow("TestCase_04")]
       [DataRow("TestCase_05")]
       [DataRow("TestCase_06")]
+      [DataRow("TestCase_07")]
+      [DataRow("TestCase_08")]
+      [DataRow("TestCase_09")]
+      [DataRow("TestCase_10")]
+      [DataRow("TestCase_11")]
+      [DataRow("TestCase_12")]
+      [DataRow("TestCase_13")]
       public void JsonWritingAsync_EndToEnd_CorrectData(string testCase)
       {
          //This is an end-to-end integration test of asynchronous JSON writing

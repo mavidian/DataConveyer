@@ -70,7 +70,7 @@ namespace Mavidian.DataConveyer.Output
          var indentChars = settingDict.GetStringSetting("IndentChars");
 
          var jsonWriter = new JsonTextWriter(writer);
-      
+
          if (string.IsNullOrEmpty(indentChars))
          {
             jsonWriter.Formatting = Formatting.None;
@@ -81,7 +81,7 @@ namespace Mavidian.DataConveyer.Output
             jsonWriter.Indentation = indentChars.Length;  //note that this will only work as expected if IntentChars setting contains the same char repeated (Newtonsoft.Json limitation)
             jsonWriter.Formatting = Formatting.Indented;
          }
-         
+
          _jsonWriter = jsonWriter;
          _underlyingWriter = writer;
 
@@ -279,7 +279,7 @@ namespace Mavidian.DataConveyer.Output
       /// Send a sequence of key-value pairs as a JSON hierarchy to JSON output.
       /// </summary>
       /// <param name="items">Key-value pairs where Key is the path to a JSON element. Represents a single record.</param>
-      private void WriteItems(IEnumerable<Tuple<string,object>> items)
+      private void WriteItems(IEnumerable<Tuple<string, object>> items)
       {  // Item: Item1 = Key, Item2 = Value
          // The Key is divided into segments, e.g. the segements of Arr[3].Obj.InnArr[2] are Arr, 3, Obj, InnArr and 2.
          // Each segment is represented by Label or Counter; which in turn corresponds to JSON object, array element or value based on the segment that follows it, like so:
@@ -293,7 +293,7 @@ namespace Mavidian.DataConveyer.Output
          foreach (var item in items)
          {
             var currSegments = SplitColumnName(item.Item1);
-            var unchangedSegmentsCount = currSegments.Zip(segmentsSoFar.Reverse(), (f, s) => Tuple.Create(f,s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
+            var unchangedSegmentsCount = currSegments.Zip(segmentsSoFar.Reverse(), (f, s) => Tuple.Create(f, s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
             while (segmentsSoFar.Skip(unchangedSegmentsCount + 1).Any())  // equivalent to while (keySegmentsSoFar.Count > unchangedSegmentsCount + 1), but more efficient
             {
                WriteEndBracketToJson(segmentsSoFar.Pop());
@@ -387,38 +387,63 @@ namespace Mavidian.DataConveyer.Output
       /// <param name="items">Key-value pairs where Key is the path to a JSON element. Represents a single record.</param>
       private async Task WriteItemsAsync(IEnumerable<Tuple<string, object>> items)
       {  // Item: Item1 = Key, Item2 = Value
-         var prevKey = new Stack<LorC>();
-         prevKey.Push(new LorC("dummy")); //will get removed
+         // The Key is divided into segments, e.g. the segements of Arr[3].Obj.InnArr[2] are Arr, 3, Obj, InnArr and 2.
+         // Each segment is represented by Label or Counter; which in turn corresponds to JSON object, array element or value based on the segment that follows it, like so:
+         //   Arr    - Label   - JSON array (as it is followed by a Counter)
+         //   3      - Counter - JSON object (as it is followed by a Label)
+         //   Obj    - Label   - JSON object (as it is followed by a Label)
+         //   InnArr - Label   - JSON array (as it is followed by a Counter)
+         //   2      - Counter - JSON value (as it is the last element)
+         var segmentsSoFar = new Stack<LorC>(); // reflect current/previous nesting on JSON output
+         segmentsSoFar.Push(new LorC("dummy~!`'&^%$???")); // starting point ("previously output path"); will get removed (as long as no match with actual key)
          foreach (var item in items)
          {
-            var segments = SplitColumnName(item.Item1);
-            var unchangedSegmentsCount = segments.Zip(prevKey.Reverse(), (f, s) => Tuple.Create(f, s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
-            while (prevKey.Count > unchangedSegmentsCount + 1)
+            var currSegments = SplitColumnName(item.Item1);
+            var unchangedSegmentsCount = currSegments.Zip(segmentsSoFar.Reverse(), (f, s) => Tuple.Create(f, s)).TakeWhile(t => t.Item1.Equals(t.Item2)).Count();
+            while (segmentsSoFar.Skip(unchangedSegmentsCount + 1).Any())  // equivalent to while (keySegmentsSoFar.Count > unchangedSegmentsCount + 1), but more efficient
             {
-               var segment = prevKey.Pop();
-               if (segment.IsLabel) await _jsonWriter.WriteEndObjectAsync(); else await _jsonWriter.WriteEndArrayAsync();
+               await WriteEndBracketToJsonAsync(segmentsSoFar.Pop());
             }
-            prevKey.Pop();
-
-            bool first = true;
-            foreach (var segment in segments.Skip(unchangedSegmentsCount))
+            segmentsSoFar.Pop();
+            // Here, segmentsSoFar contains beginning segments that are the same as in prior item.
+            bool valueFlag = true;  // otherwise, either an object or array
+            foreach (var segment in currSegments.Skip(unchangedSegmentsCount))
             {
                if (segment.IsLabel)
                {
-                  if (!first) await _jsonWriter.WriteStartObjectAsync();
+                  if (!valueFlag)
+                     await _jsonWriter.WriteStartObjectAsync();
                   await _jsonWriter.WritePropertyNameAsync(segment.Label);
                }
                else //IsCounter
                {
-                  if (!first) await _jsonWriter.WriteStartArrayAsync();
+                  if (!valueFlag)
+                     await _jsonWriter.WriteStartArrayAsync();
                }
-               first = false;
-               prevKey.Push(segment);
+               valueFlag = false;
+               segmentsSoFar.Push(segment);
             }
             await _jsonWriter.WriteValueAsync(item.Item2);
          }
+         // Close all "pending" objects and arrays, but not the value (marked above by 'valueFlag') 
+         while (segmentsSoFar.Skip(1).Any())  // equivalent to while (keySegmentsSoFar.Count > 1)
+         {
+            await WriteEndBracketToJsonAsync(segmentsSoFar.Pop());
+         }
       }
 
+
+      /// <summary>
+      /// Asynchronously write end of either object or array to JSON output.
+      /// </summary>
+      /// <param name="segment">Label or Counter object.</param>
+      private async Task WriteEndBracketToJsonAsync(LorC segment)
+      {
+         if (segment.IsLabel)
+            await _jsonWriter.WriteEndObjectAsync();
+         else
+            await _jsonWriter.WriteEndArrayAsync();
+      }
 
    }
 }

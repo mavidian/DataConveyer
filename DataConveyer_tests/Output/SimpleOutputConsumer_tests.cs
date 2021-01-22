@@ -64,7 +64,7 @@ namespace DataConveyer_tests.Output
       {
          _config = new OrchestratorConfig();
 
-         //prepare extraction of the results from the pipeline
+         //prepare extru of the results from the pipeline
          _resultingLines = new List<string>();
 
          var sn = 0; //to assign sourceNo in a round-robin fashion: 1,2,3,1,2,3,1,2

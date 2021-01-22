@@ -37,7 +37,7 @@ namespace Mavidian.DataConveyer.Output
       private readonly TextWriter _underlyingWriter;  //may be used to enhance "pretty-print"
 
       // Settings to be determined by the ctor:
-      private readonly bool _produceMultipleObjects; // if present, the output contains concatenated JSON objects (object=record) or arrays (array=cluster) - technically not a valid JSON, but commonly used; if absent (default), single array on output.
+      private readonly bool _produceStandaloneObjects; // if present, the output contains concatenated JSON objects (object=record) or arrays (array=cluster) - technically not a valid JSON, but commonly used; if absent (default), single array on output.
       private readonly bool _produceClusters; // if present, all objects (records) are enclosed in arrays, where each array represents a cluster; if absent (default), clusters are ignored.
       private readonly bool _skipColumnPresorting; // if present, no pre-sorting of keys (column names) occurs - performance feature, but JSON hierarchy may be off; if absent (default), columns are groupped by segments (in order of appearance.
 
@@ -58,12 +58,12 @@ namespace Mavidian.DataConveyer.Output
          var settingDict = settings?.SplitPairsToListOfTuples()?.ToDictionary(t => t.Item1, t => t.Item2);
 
          //Settings:
-         //    ProduceMultipleObjects - if present, multiple JSON objects are produced on output (technically not a valid JSON); if absent, a JSON array is produced (each element is an object, i.e. a record)
-         //    ProduceClusters        - if present, all objects (records) are enclosed in arrays, where each array represents a cluster; if absent (default), clusters are ignored.
-         //    SkipColumnPresorting   - if present, the keys (field names) are processed in order appearing (better perfrormance); if absent, keys are groupped by segments to assure proper JSON hierarchy nesting 
-         //    IndentChars            - string to use when indenting, e.g. "\t" or "  "; allows "pretty-print" JSON output; when absent, no indenting takes place. Due to JSON.NET library limitation, the string must consist of identical characters.
+         //    ProduceStandaloneObjects - if present, multiple JSON objects are produced on output (technically not a valid JSON); if absent, a JSON array is produced (each element is an object, i.e. a record)
+         //    ProduceClusters          - if present, all objects (records) are enclosed in arrays, where each array represents a cluster; if absent (default), clusters are ignored.
+         //    SkipColumnPresorting     - if present, the keys (field names) are processed in order appearing (better perfrormance); if absent, keys are groupped by segments to assure proper JSON hierarchy nesting 
+         //    IndentChars              - string to use when indenting, e.g. "\t" or "  "; allows "pretty-print" JSON output; when absent, no indenting takes place. Due to JSON.NET library limitation, the string must consist of identical characters.
 
-         _produceMultipleObjects = settingDict?.ContainsKey("ProduceMultipleObjects") ?? false;
+         _produceStandaloneObjects = settingDict?.ContainsKey("ProduceStandaloneObjects") ?? false;
          _produceClusters = settingDict?.ContainsKey("ProduceClusters") ?? false;
          _skipColumnPresorting = settingDict?.ContainsKey("SkipColumnPresorting") ?? false;
 
@@ -112,7 +112,7 @@ namespace Mavidian.DataConveyer.Output
             if (!_atStart)
             {
                _jsonWriter.WriteEndArray();
-               if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented) _underlyingWriter.WriteLine();  // an extra new line to help in "pretty printing"
+               if (_produceStandaloneObjects && _jsonWriter.Formatting == Formatting.Indented) _underlyingWriter.WriteLine();  // an extra new line to help in "pretty printing"
             }
             _jsonWriter.WriteStartArray();
             _currClstrNo = line.ClstrNo;
@@ -147,7 +147,7 @@ namespace Mavidian.DataConveyer.Output
             if (!_atStart)
             {
                await _jsonWriter.WriteEndArrayAsync();
-               if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented) _underlyingWriter.WriteLine();  // an extra new line to help in "pretty printing"
+               if (_produceStandaloneObjects && _jsonWriter.Formatting == Formatting.Indented) _underlyingWriter.WriteLine();  // an extra new line to help in "pretty printing"
             }
             await _jsonWriter.WriteStartArrayAsync();
             _currClstrNo = line.ClstrNo;
@@ -168,7 +168,7 @@ namespace Mavidian.DataConveyer.Output
          // last record - let's close open nodes (we're closing them explicitly even though XmlWriter could do it upon closing).
          if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to
          if (_produceClusters) _jsonWriter.WriteEndArray();
-         if (!_produceMultipleObjects) _jsonWriter.WriteEndArray();
+         if (!_produceStandaloneObjects) _jsonWriter.WriteEndArray();
          _jsonWriter.Flush();
       }
 
@@ -183,7 +183,7 @@ namespace Mavidian.DataConveyer.Output
          // last record - let's close open nodes (we're closing them explicitly even though XmlWriter could do it upon closing).
          if (_atStart) return;  //unlikely, but possible, e.g. 2nd target never directed to
          if (_produceClusters) _jsonWriter.WriteEndArray();
-         if (!_produceMultipleObjects) _jsonWriter.WriteEndArray();
+         if (!_produceStandaloneObjects) _jsonWriter.WriteEndArray();
          await _jsonWriter.FlushAsync();
       }
 
@@ -205,7 +205,7 @@ namespace Mavidian.DataConveyer.Output
       /// <param name="firstClstrNo"></param>
       private void InitiateDispensing(int firstClstrNo)
       {
-         if (!_produceMultipleObjects) _jsonWriter.WriteStartArray();
+         if (!_produceStandaloneObjects) _jsonWriter.WriteStartArray();
       }
 
 
@@ -216,7 +216,7 @@ namespace Mavidian.DataConveyer.Output
       /// <returns></returns>
       private async Task InitiateDispensingAsync(int firstClstrNo)
       {
-         if (!_produceMultipleObjects) await _jsonWriter.WriteStartArrayAsync();
+         if (!_produceStandaloneObjects) await _jsonWriter.WriteStartArrayAsync();
       }
 
 
@@ -228,7 +228,7 @@ namespace Mavidian.DataConveyer.Output
       {
          Debug.Assert(line.GetType() == typeof(Xrecord));
 
-         if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented && !_atStart && !_produceClusters)
+         if (_produceStandaloneObjects && _jsonWriter.Formatting == Formatting.Indented && !_atStart && !_produceClusters)
          {  //we're starting a new JSON document here (technically not a valid JSON)
             //add an extra new line to help in "pretty printing"
             _underlyingWriter.WriteLine();
@@ -299,7 +299,7 @@ namespace Mavidian.DataConveyer.Output
                WriteEndBracketToJson(segmentsSoFar.Pop());
             }
             segmentsSoFar.Pop();
-            // Here, segmentsSoFar contains segments that are common with prior item.
+            // Here, segmentsSoFar contains beginning segments that are the same as in prior item.
             bool valueFlag = true;  // otherwise, either an object or array
             foreach (var segment in currSegments.Skip(unchangedSegmentsCount))
             {
@@ -367,7 +367,7 @@ namespace Mavidian.DataConveyer.Output
       {
          Debug.Assert(line.GetType() == typeof(Xrecord));
 
-         if (_produceMultipleObjects && _jsonWriter.Formatting == Formatting.Indented && !_atStart && !_produceClusters)
+         if (_produceStandaloneObjects && _jsonWriter.Formatting == Formatting.Indented && !_atStart && !_produceClusters)
          {  //we're starting a new JSON document here (technically not a valid JSON)
             //add an extra new line to help in "pretty printing"
             await _underlyingWriter.WriteLineAsync();

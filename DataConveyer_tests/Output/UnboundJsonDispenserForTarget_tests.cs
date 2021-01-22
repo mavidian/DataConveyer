@@ -19,6 +19,7 @@ using FluentAssertions;
 using Mavidian.DataConveyer.Common;
 using Mavidian.DataConveyer.Output;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,7 +101,7 @@ namespace DataConveyer_tests.Output
 
 
 #region TestCase_02
-         //"Happy path", ProduceMultipleObjects
+         //"Happy path", ProduceStandaloneObjects
          _testDataRepo.Add("TestCase_02", Tuple.Create(
              //records to output
              new List<Xrecord>
@@ -125,7 +126,7 @@ namespace DataConveyer_tests.Output
                            )
              },
              //settings:
-             "ProduceMultipleObjects,IndentChars|   ",
+             "ProduceStandaloneObjects,IndentChars|   ",
              //expected output
              @"{
    ""ID"": ""1"",
@@ -208,7 +209,7 @@ namespace DataConveyer_tests.Output
 
 
 #region TestCase_04
-         //"Happy path", ProduceClusters, ProduceMultipleObjects
+         //"Happy path", ProduceClusters, ProduceStandaloneObjects
          _testDataRepo.Add("TestCase_04", Tuple.Create(
              //records to output
              new List<Xrecord>
@@ -233,7 +234,7 @@ namespace DataConveyer_tests.Output
                            )
              },
              //settings:
-             "ProduceClusters,ProduceMultipleObjects,IndentChars|   ",
+             "ProduceClusters,ProduceStandaloneObjects,IndentChars|   ",
              //expected output
              @"[
    {
@@ -557,9 +558,77 @@ namespace DataConveyer_tests.Output
 #endregion TestCase_09
 
 
+
 #region TestCase_10
-         // Simple records (no nesting)
+         //Complex records, not a realistic scenario, but illustration of how Data Conveyer writes unbound JSON.
+         //This is an example of bad input data that Data Conveyer is able to make sense of and create a valid JSON.
+         //Look at the Year value/object. Basically, the same problem as in ErrTestCase_01; however, as the value comes first, an ambiguous Year element is created.
          _testDataRepo.Add("TestCase_10", Tuple.Create(
+             //records to output
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State","Alabama" as object),
+                                                               Tuple.Create("Year","2009" as object),
+                                                               Tuple.Create("Year.Population",0 as object),
+                                                               Tuple.Create("Year.Drivers",3782284 as object),
+                                                               Tuple.Create("Year.Vehicles", 4610850 as object)
+                                                             }
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State","Alabama" as object),
+                                                               Tuple.Create("Year","2010" as object),
+                                                               Tuple.Create("Year.Population",4785514 as object),
+                                                               Tuple.Create("Year.Drivers",3805751 as object),
+                                                               Tuple.Create("Year.Vehicles", 4653840 as object)
+                                                             }
+                            ),
+               new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State", "Wyoming" as object),
+                                                               Tuple.Create("Year", "2010" as object),
+                                                               Tuple.Create("Year.Population", 582328 as object),
+                                                               Tuple.Create("Year.Drivers", 0 as object),
+                                                               Tuple.Create("Year.Vehicles", 0 as object)
+                                                             }
+                           )
+             },
+             //settings:
+             "IndentChars|   ",
+             //expected output
+             @"[
+   {
+      ""State"": ""Alabama"",
+      ""Year"": ""2009"",
+      ""Population"": 0,
+      ""Year"": {
+         ""Drivers"": 3782284,
+         ""Vehicles"": 4610850
+      }
+   },
+   {
+      ""State"": ""Alabama"",
+      ""Year"": ""2010"",
+      ""Population"": 4785514,
+      ""Year"": {
+         ""Drivers"": 3805751,
+         ""Vehicles"": 4653840
+      }
+   },
+   {
+      ""State"": ""Wyoming"",
+      ""Year"": ""2010"",
+      ""Population"": 582328,
+      ""Year"": {
+         ""Drivers"": 0,
+         ""Vehicles"": 0
+      }
+   }
+]"
+                                                 )  //Tuple.Create
+                          );  //Add TestCase_10
+#endregion TestCase_10
+
+
+#region TestCase_11
+         // Simple records (no nesting)
+         _testDataRepo.Add("TestCase_11", Tuple.Create(
              //records to output
              new List<Xrecord>
              {
@@ -614,12 +683,16 @@ namespace DataConveyer_tests.Output
   }
 ]"
                                                  )  //Tuple.Create
-                          );  //Add TestCase_10
-#endregion TestCase_10
+                          );  //Add TestCase_11
+#endregion TestCase_11
+
+
+
 
 
 // ---------------- Data for "error" tests below ---------------
-// These tests do not yield JSON data as their Xrecord key sequences are not representable by valid JSON.
+// These tests do not yield JSON data; they are unusual sceanarios not typically encountered. Potentally, valid JSON, but not suppeorted by Data Conveyer.
+// The tests are expected to throw JsonWriterException.
 
 
 #region ErrTestCase_01
@@ -629,31 +702,17 @@ namespace DataConveyer_tests.Output
              new List<Xrecord>
              {
                 new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State","Alabama" as object),
-                                                               Tuple.Create("Year","2009" as object),
                                                                Tuple.Create("Year.Population",0 as object),
+                                                               Tuple.Create("Year","2009" as object),
                                                                Tuple.Create("Year.Drivers",3782284 as object),
                                                                Tuple.Create("Year.Vehicles", 4610850 as object)
-                                                             }
-                           ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State","Alabama" as object),
-                                                               Tuple.Create("Year","2010" as object),
-                                                               Tuple.Create("Year.Population",4785514 as object),
-                                                               Tuple.Create("Year.Drivers",3805751 as object),
-                                                               Tuple.Create("Year.Vehicles", 4653840 as object)
-                                                             }
-                            ),
-               new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State", "Wyoming" as object),
-                                                               Tuple.Create("Year", "2010" as object),
-                                                               Tuple.Create("Year.Population", 582328 as object),
-                                                               Tuple.Create("Year.Drivers", 0 as object),
-                                                               Tuple.Create("Year.Vehicles", 0 as object)
                                                              }
                            )
              },
              //settings:
              "IndentChars|   ",
-             //expected output (irrelevant - (JSON object cannot have a value w/o a key; unlike 'explicit' text allowed in XML)
-             @"--- not representable in JSON (note conflict in Year element definition - it needs to be either JSON value or JSON object, not both) ---"
+             //expected output
+             @"--- ambiguous definition of Year element (value and object); scenario not supported by Data Conveyer ---"
                                                  )  //Tuple.Create
                           );  //Add ErrTestCase_01
 #endregion ErrTestCase_01
@@ -665,36 +724,22 @@ namespace DataConveyer_tests.Output
              //records to output
              new List<Xrecord>
              {
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State","Alabama" as object),
-                                                               Tuple.Create("State.Year","2009" as object),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State.Year","2009" as object),
                                                                Tuple.Create("State.Year.Population",0 as object),
                                                                Tuple.Create("State.Year.Drivers",3782284 as object),
-                                                               Tuple.Create("State.Year.Vehicles", 4610850 as object)
+                                                               Tuple.Create("State.Year.Vehicles", 4610850 as object),
+                                                               Tuple.Create("State","Alabama" as object)
                                                              }
-                           ),
-                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State","Alabama" as object),
-                                                               Tuple.Create("State.Year","2010" as object),
-                                                               Tuple.Create("State.Year.Population",4785514 as object),
-                                                               Tuple.Create("State.Year.Drivers",3805751 as object),
-                                                               Tuple.Create("State.Year.Vehicles", 4653840 as object)
-                                                             }
-                            ),
-               new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("State", "Wyoming" as object),
-                                                               Tuple.Create("State.Year", "2010" as object),
-                                                               Tuple.Create("State.Year.Population", 582328 as object),
-                                                               Tuple.Create("State.Year.Drivers", 0 as object),
-                                                               Tuple.Create("State.Year.Vehicles", 0 as object)
-                                                             }
+
                            )
              },
              //settings:
              "IndentChars|   ",
-             //expected output (irrelevant - (JSON object cannot have a value w/o a key; unlike 'explicit' text allowed in XML)
-             @"--- not representable in JSON (note conflict in State element definition - it needs to be either JSON value or JSON object, not both) ---"
+             //expected output
+             @"--- ambiguous definition of State element (value and object); scenario not supported by Data Conveyer ---"
                                                  )  //Tuple.Create
                           );  //Add ErrTestCase_02
 #endregion ErrTestCase_02
-
 
 
 #region ErrTestCase_03
@@ -712,8 +757,8 @@ namespace DataConveyer_tests.Output
              },
              //settings:
              "SkipColumnPresorting,IndentChars|   ",  // note that an attempt to sort would result in stack overflow
-             //expected output (irrelevant - (JSON doesn't allow key to be repeated)
-             @"--- not representable in JSON ---"
+             //expected output
+             @"--- redundant definition of Val value; scenario not supported by Data Conveyer ---"
 
                                                  )  //Tuple.Create
                           );  //Add ErrTestCase_03
@@ -816,9 +861,7 @@ namespace DataConveyer_tests.Output
       [DataRow("TestCase_08")]
       [DataRow("TestCase_09")]
       [DataRow("TestCase_10")]
-      //[DataRow("ErrTestCase_01")]
-      //[DataRow("ErrTestCase_02")]
-      //[DataRow("ErrTestCase_03")]
+      [DataRow("TestCase_11")]
       public void JsonWriting_EndToEnd_CorrectData(string testCase)
       {
          //This is an end-to-end integration test of JSON writing
@@ -839,6 +882,31 @@ namespace DataConveyer_tests.Output
 
          //assert
          actual.Should().Be(expected);
+      }
+
+
+      [DataTestMethod]
+      [DataRow("ErrTestCase_01")]
+      [DataRow("ErrTestCase_02")]
+      [DataRow("ErrTestCase_03")]
+      [ExpectedException(typeof(JsonWriterException))]
+      public void JsonWriting_BadInput_ExceptionThrown(string testCase)
+      {
+         //This test attempts JSON writing where Xrecord data is not representable as JSON
+
+         //arrange
+         var testData = _testDataRepo[testCase];
+         var inputRecs = testData.Item1;
+         var settings = testData.Item2;
+         var dummyTargetNo = 15;
+         var output = new StringWriter();
+         var xrecordConsumer = new UnboundJsonDispenserForTarget(output, dummyTargetNo, settings);
+         var expected = testData.Item3;
+
+         //act
+         inputRecs.ForEach(r => xrecordConsumer.SendNextLine(Tuple.Create((ExternalLine)r, dummyTargetNo)));
+
+         //assert - expect exception
       }
 
 

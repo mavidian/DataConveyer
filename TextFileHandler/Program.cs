@@ -56,19 +56,22 @@ namespace TextFileHandler
          string inputXmlFile = args[8];
          // args[9] = fully qualified name of the JSON input file
          string inputJsonFile = args[9];
+         // args[9] = fully qualified name of the flattened JSON input file (for unbound JSON)
+         string inputFlattenedJsonFile = args[10];
 
          // args[10] - args[19] = fully qualified names of the 4 corresponding output files
-         string outputFile1 = args[10];
-         string outputFile2 = args[11];
-         string outputFile3 = args[12];
-         string outputFile4 = args[13];
-         string outputFile5 = args[14];
-         string outputFile6 = args[15];
-         string outputFile7 = args[16];
-         string outputFile8 = args[17];
-         string outputFile9 = args[18];
-         string outputFile10 = args[19];
-         string outputFile11 = args[20];
+         string outputFile1 = args[11];
+         string outputFile2 = args[12];
+         string outputFile3 = args[13];
+         string outputFile4 = args[14];
+         string outputFile5 = args[15];
+         string outputFile6 = args[16];
+         string outputFile7 = args[17];
+         string outputFile8 = args[18];
+         string outputFile9 = args[19];
+         string outputFile10 = args[20];
+         string outputFile11 = args[21];
+         string outputFile12 = args[22];
 
          Console.WriteLine("Input keyword file: {0}", inputKwFile);
          Console.WriteLine("Input delimited file: {0}", inputCsvFile);
@@ -716,6 +719,109 @@ namespace TextFileHandler
          Console.WriteLine("Total clusters processed on output:      {0}", processResult.ClustersWritten);
          Console.WriteLine("Total records sent to the output file:   {0}", processResult.RowsWritten);
          Console.WriteLine();
+
+
+
+         //Part 11: process and then create a hierarchical JSON file
+
+         //Read a JSON file containing data on population, driver and vehicle numbers by US states for years 2009-2020.
+         // On input, the data is sorted by state & year, but not grouped (i.e. a flat JSON array of objects).
+         // On output, data is grouped by state & year forming hierarchical JSON consisting of an array of State objects, each
+         // containing Year objects with the 3 number properties (population, drivers and vehicles respectively).
+         // In addition, numbers (which are strings on input) are output as JSON numbers.
+         // inputFlattenedJsonFile -> outputFile12
+
+         Console.WriteLine();
+         Console.WriteLine("Part 11: Grouping flattened JSON file into hierarchical JSON file...");
+         Console.WriteLine();
+
+         stopWatch.Restart();
+
+         progressCounts = new int[] { 0, 0, 0 };  //intake, transformation, output
+
+         config = new OrchestratorConfig(LoggerCreator.CreateLogger(LoggerType.LogFile, "Part 11: process and create a JSON file (hierarchy-aware unbound JSON)", LogEntrySeverity.Information))
+         {
+            //CloseLoggerOnDispose = false,
+            ReportProgress = true,
+            ProgressInterval = 10,
+            InputDataKind = KindOfTextData.UnboundJSON,
+            InputFileNames = inputFlattenedJsonFile,
+            XmlJsonIntakeSettings = "CollectionNode|,RecordNode|",  //matches SQL Server FOR JSON output
+             ClusterMarker = (rec, prevRec, recCnt) =>
+            {  //group records by State
+               return (prevRec == null) || ((string)rec["State"]) != ((string)prevRec["State"]);
+            },
+            MarkerStartsCluster = true,
+            AllowOnTheFlyInputFields = true,
+            TransformerType = TransformerType.Clusterbound,
+            ClusterboundTransformer = clstr =>
+            {  //transform each cluster, so that record field names reflect the required JSON hierarchy
+               var outClstr = clstr.GetEmptyClone();
+               //There will be a single record for an output cluster that combines PDV data for all years
+               var firstRec = clstr.Records[0];
+               string state = (string)firstRec["State"];
+               var outRec = firstRec.GetEmptyClone();
+               foreach (var rec in clstr.Records) //each rec represents Year
+               {
+                  Debug.Assert(state == (string)rec["State"]); //records got clustered by State
+                  var year = (string)rec["Year"];
+                  outRec.AddItem($"{state}.{year}.Population", (string)rec["Population"]);
+                  outRec.AddItem($"{state}.{year}.Drivers", (string)rec["Drivers"]);
+                  outRec.AddItem($"{state}.{year}.Vehicles", (string)rec["Vehicles"]);
+                  //Note that we could have the above numbers cast to int instead of string, but this would require them to be of int type, i.e. the following config setting:
+                  // ExplicitTypeDefinitions = "Population|I,Drivers|I,Vehicles|I",
+               }
+               outClstr.AddRecord(outRec);
+
+               //Note: As an alternative, instead of sending a single record that combines all Years for a cluster (State),
+               //      you could send multiple records (one per Year). Like so:
+               //foreach (var rec in clstr.Records) //each rec represents Year
+               //{
+               //   Debug.Assert(state == (string)rec["State"]); //records got clustered by State
+               //   var year = (string)rec["Year"];
+               //   var outRec = rec.GetEmptyClone();
+               //   outRec.AddItem($"{state}.{year}.Population", (string)rec["Population"]);
+               //   outRec.AddItem($"{state}.{year}.Drivers", (string)rec["Drivers"]);
+               //   outRec.AddItem($"{state}.{year}.Vehicles", (string)rec["Vehicles"]);
+               //   outClstr.AddRecord(outRec);
+               //}
+
+               return outClstr;
+            },
+            AllowTransformToAlterFields = true,
+            ConcurrencyLevel = 4,
+            AsyncOutput = true,
+            OutputDataKind = KindOfTextData.UnboundJSON,
+            OutputFileName = outputFile12,
+            XmlJsonOutputSettings = "ClusterNode|,RecordNode|,IndentChars|  ",  //pretty-print, nested arrays representing clusters and records
+            PhaseStartingHandler = (s, e) => { Console.WriteLine($"{DateTime.Now.ToString():HH:mm:ss.fff} {e.Phase.ToString()} starting"); },
+            PhaseFinishedHandler = (s, e) => { Console.WriteLine($"{DateTime.Now.ToString():HH:mm:ss.fff} {e.Phase.ToString()} finished ({e.ClstrCnt.ToString()} clusters processed)"); },
+            ProgressChangedHandler = (s, e) =>
+            {
+               if (e.Phase == Phase.Intake) progressCounts[0]++; else if (e.Phase == Phase.Transformation) progressCounts[1]++; else progressCounts[2]++;
+            }
+         };
+
+         using (orchestrator = OrchestratorCreator.GetEtlOrchestrator(config))
+         {
+            //Main processing occurs here:
+            executionTask = orchestrator.ExecuteAsync();
+            processResult = executionTask.Result;
+         }
+
+         //Report execution statistics:
+         Console.WriteLine();
+         Console.WriteLine($"Counts of ProgressChanged calls by phase: {progressCounts[0].ToString()}, {progressCounts[1].ToString()}, {progressCounts[2].ToString()}");
+         stopWatch.Stop();
+         Console.WriteLine();
+         Console.WriteLine("Execution of a file completed in {0} seconds", stopWatch.Elapsed.TotalSeconds.ToString("##,##0.000"));
+         Console.WriteLine("Completion status is {0}", processResult.CompletionStatus);
+         Console.WriteLine("Total records read from the input file:  {0}", processResult.RowsRead);
+         Console.WriteLine("Total clusters created from input rows:  {0}", processResult.ClustersRead);
+         Console.WriteLine("Total clusters processed on output:      {0}", processResult.ClustersWritten);
+         Console.WriteLine("Total records sent to the output file:   {0}", processResult.RowsWritten);
+         Console.WriteLine();
+
 
 
          Console.WriteLine("PROCESSING COMPLETE.");

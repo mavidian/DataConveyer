@@ -10,7 +10,7 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIconUrl>http://www.mavidian.com/files/MavLogo_15_64_64_t.png</PackageIconUrl>
     <PackageIcon>icon\MavLogo_17_128_128.png</PackageIcon>
-    <PackageReleaseNotes>Asynchronous intake and output for X12, XML and JSON data kinds.</PackageReleaseNotes>
+    <PackageReleaseNotes>Support for unbound JSON.</PackageReleaseNotes>
     <PackageTags>data parser scrubber transformer router formatter etl migration dataflow</PackageTags>
     <PackageProjectUrl>http://www.dataconveyer.com</PackageProjectUrl>
     <SignAssembly>true</SignAssembly>

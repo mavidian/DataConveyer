@@ -207,7 +207,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// </para>
       /// <note type="note">
       /// <para>
-      /// In case of JSON intake, the elements are parsed according to JSON specifications, which involves automatic data type determination. However,
+      /// In case of <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/> intake, the elements are parsed according to JSON specifications, which involves automatic data type determination. However,
       /// in order to preserve this type, the corresponding field must be of a matching type. Otherwise, the type conversion will be performed.
       /// </para>
       /// <para>
@@ -392,7 +392,7 @@ namespace Mavidian.DataConveyer.Orchestrators
 #region Intake specific settings
 
       /// <summary>
-      /// Type (format) of input data: Raw, Keyword, Delimited, Flat, Arbitrary, XML, JSON or X12.  Default is Raw.
+      /// Type (format) of input data: Raw, Keyword, Delimited, Flat, Arbitrary, XML, JSON, UnboundJSON or X12.  Default is Raw.
       /// These values are intended for future use: HL7 and Ultimate.
       /// </summary>
       public KindOfTextData InputDataKind { get; set; }
@@ -599,7 +599,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetIntakeSupplier">SetIntakeSupplier</see> method is intended for use in case of record-centric intake from multiple sources when access to the global cache is needed.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes a single parameter (reference to global cache) and returns a tuple containing a record (expressed as a sequence of key-value pairs) and the corresponding source number.</param>
       public void SetIntakeSupplier(Func<IGlobalCache, Tuple<IEnumerable<Tuple<string, object>>, int>> supplierToSet)
@@ -611,7 +611,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetIntakeSupplier">SetIntakeSupplier</see> method is intended for use in case of record-centric intake from multiple sources and no need to access the global cache.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes no parameters and returns a tuple containing a record (expressed as a sequence of key-value pairs) and a corresponding source number.
       /// The function has no access to global cache.</param>
@@ -624,7 +624,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetIntakeSupplier">SetIntakeSupplier</see> method is intended for use in case of record-centric intake from a single source when access to the global cache is needed.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes a single parameter (reference to global cache) and returns a record expressed as a sequence of key-value pairs.
       /// The function is suitable in case of a single source (the implied source number is 1).</param>
@@ -637,7 +637,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetIntakeSupplier">SetIntakeSupplier</see> method is intended for use in case of record-centric intake from a single source and no need to access the global cache.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes no parameters and returns a record expressed as a sequence of key-value pairs.
       /// The function has no access to global cache and is suitable in case of a single source (the implied source number is 1).</param>
@@ -788,7 +788,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncIntakeSupplier">SetAsyncIntakeSupplier</see> method is intended for use in case of record-centric intake from multiple sources when access to the global cache is needed.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes a single parameter (reference to global cache) and returns a task promising a tuple containing a record (expressed as a sequence of key-value pairs) and the corresponding source number.</param>
       public void SetAsyncIntakeSupplier(Func<IGlobalCache, Task<Tuple<IEnumerable<Tuple<string, object>>, int>>> supplierToSet)
@@ -800,7 +800,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncIntakeSupplier">SetAsyncIntakeSupplier</see> method is intended for use in case of record-centric intake from multiple sources and no need to access the global cache.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes no parameters and returns a task promising a tuple containing a record (expressed as a sequence of key-value pairs) and a corresponding source number.
       /// The function has no access to global cache.</param>
@@ -813,7 +813,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncIntakeSupplier">SetAsyncIntakeSupplier</see> method is intended for use in case of record-centric intake from a single source when access to the global cache is needed.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes a single parameter (reference to global cache) and returns a task promising a record expressed as a sequence of key-value pairs.
       /// The function is suitable in case of a single source intake (the implied source number is 1).</param>
@@ -826,7 +826,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous intake supplier function.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncIntakeSupplier">SetAsyncIntakeSupplier</see> method is intended for use in case of record-centric intake (such as from a single source and no need to access the global cache.
-      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. In either case, data returned by this function is processed the same way.
+      /// To use this overload, the <see cref="InputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. In either case, data returned by this function is processed the same way.
       /// </summary>
       /// <param name="supplierToSet">A function that takes no parameters and returns a task promising a record expressed as a sequence of key-value pairs.
       /// The function has no access to global cache and is suitable in case of a single source intake (the implied source number is 1).</param>
@@ -1069,7 +1069,7 @@ namespace Mavidian.DataConveyer.Orchestrators
 
 
       /// <summary>
-      /// A string containing comma-separated paraketers for parsing <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> data on intake.
+      /// A string containing comma-separated parameters for parsing <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> data on intake.
       /// Each such parameter is a key-value pair with a pipe symbol (|) separating the key and the value.
       /// The parameters reflect the shape of data to parse and define the elements to be extracted.
       /// There are some differences (explained below) in their interpretation in case of <see cref="KindOfTextData.XML"/> vs <see cref="KindOfTextData.JSON"/>.
@@ -1148,6 +1148,11 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <para><b>Example 6:</b><c>"RecordNode|"</c><i>(<see cref="KindOfTextData.JSON"/> only - multiple objects containing records)</i></para>
       /// <para><b>Example 7:</b><c>"CollectionNode|Root/Members[@region=\"North\"],ClusterNode|Group[@id=2][@zone=\"\"]/Family,RecordNode|Data/Member[@class],IncludeExplicitText|true"</c><i>(<see cref="KindOfTextData.XML"/> only)</i></para>
       /// <para>This configuration setting is only applicable when <see cref="InputDataKind"/> value is <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.</para>
+      /// <note type="note">
+      /// <para>
+      /// This configuration setting is not relevant to processing of <see cref="KindOfTextData.UnboundJSON"/> intake..
+      /// </para>
+      /// </note>
       /// </summary>
       public string XmlJsonIntakeSettings { get; set; }
 
@@ -1315,7 +1320,7 @@ namespace Mavidian.DataConveyer.Orchestrators
 
 
       /// <summary>
-      /// Type (format) of output data: Raw, Keyword, Delimited, Flat, Arbitrary, X12, XML or JSON.  Default is Raw.
+      /// Type (format) of output data: Raw, Keyword, Delimited, Flat, Arbitrary, XML, JSON, UnboundJSON or X12.  Default is Raw.
       /// HL7 and Ultimate types are designated for future use.
       /// </summary>
       public KindOfTextData OutputDataKind { get; set; }
@@ -1565,7 +1570,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetOutputConsumer">SetOutputConsumer</see> method is intended for use in case of record-centric output to multiple targets when access to the global cache is needed.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or  or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An action (void function) that takes 2 parameters: (1) a tuple containing a tuple containing a record expressed as a sequence of key-value pairs and a corresponding target number, and (2) a reference to global cache.</param>
       /// <remarks>
@@ -1593,7 +1598,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetOutputConsumer">SetOutputConsumer</see> method is intended for use in case of record-centric output to multiple targets and no need to access the global cache.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An action (void function) that takes a single parameter: a tuple containing a record expressed as a sequence of key-value pairs and a corresponding target number.
       /// The action has no access to global cache.</param>
@@ -1622,7 +1627,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetOutputConsumer">SetOutputConsumer</see> method is intended for use in case of record-centric output to a single target when access to the global cache is needed.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An action (void function) that takes 2 parameters: (1) a record expressed as a sequence of key-value pairs, and (2) a reference to global cache.
       /// The action is suitable in case of a single target (it will direct all output to target number 1).</param>
@@ -1651,7 +1656,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetOutputConsumer">SetOutputConsumer</see> method is intended for use in case of record-centric output to a single target and no need to access the global cache.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An action (void function) that takes a single parameter containing a record expressed as a sequence of key-value pairs.
       /// The action has no access to global cache and is suitable in case of a single target (it will direct all output to target number 1).</param>
@@ -1858,7 +1863,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncOutputConsumer">SetAsyncOutputConsumer</see> method is intended for use in case of record-centric output to multiple targets when access to the global cache is needed.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An asynchronous action (task-returning function) that takes 2 parameters: (1) a tuple containing a tuple containing a record expressed as a sequence of key-value pairs and a corresponding target number, and (2) a reference to global cache.</param>
       /// <remarks>
@@ -1886,7 +1891,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncOutputConsumer">SetAsyncOutputConsumer</see> method is intended for use in case of record-centric output to multiple targets and no need to access the global cache.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An asynchronous action (task-returning function) that takes a single parameter: a tuple containing a record expressed as a sequence of key-value pairs and a corresponding target number.
       /// The action has no access to global cache.</param>
@@ -1915,7 +1920,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncOutputConsumer">SetAsyncOutputConsumer</see> method is intended for use in case of record-centric output to a single target when access to the global cache is needed.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An asynchronous action (task-returning function) that takes 2 parameters: (1) a record expressed as a sequence of key-value pairs, and (2) a reference to global cache.
       /// The action is suitable in case of a single target (it will direct all output to target number 1).</param>
@@ -1944,7 +1949,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <summary>
       /// Designates an asynchronous output consumer action.
       /// This overload of the <see cref="O:Mavidian.DataConveyer.Orchestrators.OrchestratorConfig.SetAsyncOutputConsumer">SetAsyncOutputConsumer</see> method is intended for use in case of record-centric output to a single target and no need to access the global cache.
-      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>. See the note below for differences between these two kinds.
+      /// To use this overload, the <see cref="OutputDataKind"/> setting must be either <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. See the note below for differences between these kinds.
       /// </summary>
       /// <param name="consumerToSet">An asynchronous action (task-returning function) that takes a single parameter containing a record expressed as a sequence of key-value pairs.
       /// The action has no access to global cache and is suitable in case of a single target (it will direct all output to target number 1).</param>
@@ -2142,10 +2147,10 @@ namespace Mavidian.DataConveyer.Orchestrators
 
 
       /// <summary>
-      /// A string containing comma separated parameters for writing <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> data on output.
+      /// A string containing comma separated parameters for writing <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>data on output.
       /// Each such parameter is a key-value pair with a pipe symbol (|) separating the key and the value.
       /// The parameters define the shape of data to write.
-      /// There are some differences (explained below) in their interpretation in case of <see cref="KindOfTextData.XML"/> vs <see cref="KindOfTextData.JSON"/>.
+      /// There are differences (explained below) in their interpretation in case of <see cref="KindOfTextData.XML"/> vs <see cref="KindOfTextData.JSON"/> vs <see cref="KindOfTextData.UnboundJSON"/>.
       /// The following keys can be used:
       /// <list type="bullet">
       ///   <item>
@@ -2154,6 +2159,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///       "xpath" defining the collection of clusters (or records if the ClusterNode parameter is absent).
       ///       If this parameter is absent for <see cref="KindOfTextData.XML"/>, then output will contain XML fragment where each root constitutes a record or a cluster.
       ///       In case of <see cref="KindOfTextData.JSON"/>, absent or empty value generally means an array instead of an object.
+      ///       Ignored in case of <see cref="KindOfTextData.UnboundJSON"/>.
       ///     </description>
       ///   </item>
       ///   <item>
@@ -2161,6 +2167,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///     <description>
       ///       "xpath" to the cluster node within the collection node. Records with the same cluster number will be placed inside the same cluster node.
       ///       If this parameter is absent, then all records will be placed directly in the collection node regardless of their cluster number.
+      ///       Ignored in case of <see cref="KindOfTextData.UnboundJSON"/>.
       ///     </description>
       ///   </item>
       ///   <item>
@@ -2169,12 +2176,13 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///       "xpath" to the record node within the cluster node (or the collection node if the cluster node is empty).
       ///       In case of <see cref="KindOfTextData.XML"/> this parameter is required; if absent or empty, a default value of "__record__" will be assumed.
       ///       In case of <see cref="KindOfTextData.JSON"/> this parameter can be empty (or even absent if CollectionNode and ClusterNode are also empty - special case to output multiple objects containing records).
+      ///       Ignored in case of <see cref="KindOfTextData.UnboundJSON"/>.
       ///     </description>
       ///   </item>
       ///   <item>
       ///     <term>AttributeFields</term>
       ///     <description>
-      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>.
+      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>.
       ///       A semi-colon separated list of field names (item keys) to be projected as attributes of the record node (and not inner nodes).
       ///       In addition, all fields with names starting with @ will be projected as attributes of the record node (the @ will not be removed from the attribute name).
       ///     </description>
@@ -2183,13 +2191,38 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///     <term>IndentChars</term>
       ///     <description>
       ///       A string to use when indenting, e.g. "\t" or "  ". This parameter allows to "pretty-print" the output. When absent, no indenting takes place.
-      ///       Note that in case of <see cref="KindOfTextData.JSON"/>, the only sensible value for this parameter contains a string containg a single character (possibly repeated,
+      ///       Note that in case of <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>, the only sensible value for this parameter contains a string containg a single character (possibly repeated,
       ///       e.g. "   " or "\t"; if different characters are used (e.g. " \t" i.e. a space and a tab), then the output may not be as expected.
       ///     </description>
       ///   </item>
       ///   <item>
       ///     <term>NewLineChars</term>
-      ///     <description><see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. Characters to use for line breaks (to "pretty-print" the <see cref="KindOfTextData.XML"/> output).</description>
+      ///     <description><see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. Characters to use for line breaks (to "pretty-print" the <see cref="KindOfTextData.XML"/> output).</description>
+      ///   </item>
+      ///   <item>
+      ///     <term>ProduceStandaloneObjects</term>
+      ///     <description>
+      ///       Only applicable to <see cref="KindOfTextData.UnboundJSON"/> output: if present, causes Data Conveyer to produce successive, standalone objects (records) or
+      ///       , if ProduceClusters is also present, arrays (clusters) - technically not valid JSON, but commonly used; if absent, a JSON array is produced where each record
+      ///       (or cluster ProduceClusters is also present) becomes an array element.
+      ///       Ignored in case of <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.
+      ///     </description>
+      ///   </item>
+      ///   <item>
+      ///     <term>ProduceClusters</term>
+      ///     <description>
+      ///       Only applicable to <see cref="KindOfTextData.UnboundJSON"/> output: if present, causes all records of a clusted to be enclosed in arrays;
+      ///       if absent, clusters are ignored on output.
+      ///       Ignored in case of <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.
+      ///     </description>
+      ///   </item>
+      ///   <item>
+      ///     <term>SkipColumnPresorting</term>
+      ///     <description>
+      ///       Only applicable to <see cref="KindOfTextData.UnboundJSON"/> output: if present, the fields are processed in order they appear in the records
+      ///       (better performance, but JSON hierarchy may be off); if absent, fields are grouped by segments (dot notation) to force proper JSON nesting hierarchy.
+      ///       Ignored in case of <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.
+      ///     </description>
       ///   </item>
       /// </list>
       /// <note type="note">
@@ -2217,7 +2250,8 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <para><b>Example 5:</b><c>"ClusterNode|,RecordNode|"</c><i>(<see cref="KindOfTextData.JSON"/> only - an array of arrays=clusters of objects=records)</i></para>
       /// <para><b>Example 6:</b><c>""</c><i>(JSON only - all node parameters absent is a special case that results in multiple objects containing records)</i></para>
       /// <para><b>Example 7:</b><c>"CollectionNode|Root/Members[@region=North],ClusterNode|Group[@id=2][@zone=\"\"]/Family,RecordNode|Data/Member[@class=\"main\"],AttributeFields|ID;zone"</c><i>(<see cref="KindOfTextData.XML"/> only)</i></para>
-      /// <para>This configuration setting is only applicable when <see cref="OutputDataKind"/> value is <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.</para>
+      /// <para><b>Example 8:</b><c>"ProduceStandaloneObjects,SkipColumnPresorting,IndentChars|  "</c><i>(UnboundJSON)</i></para>
+      /// <para>This configuration setting is only applicable when <see cref="OutputDataKind"/> value is <see cref="KindOfTextData.XML"/>, <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>.</para>
       /// </summary>
       public string XmlJsonOutputSettings { get; set; }
 

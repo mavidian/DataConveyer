@@ -60,7 +60,7 @@ namespace Mavidian.DataConveyer.Output
          //Settings:
          //    ProduceStandaloneObjects - if present, multiple JSON objects are produced on output (technically not a valid JSON); if absent, a JSON array is produced (each element is an object, i.e. a record)
          //    ProduceClusters          - if present, all objects (records) are enclosed in arrays, where each array represents a cluster; if absent (default), clusters are ignored.
-         //    SkipColumnPresorting     - if present, the keys (field names) are processed in order appearing (better perfrormance); if absent, keys are groupped by segments to assure proper JSON hierarchy nesting 
+         //    SkipColumnPresorting     - if present, the keys (field names) are processed in order appearing (better performance); if absent, keys are grouped by segments to assure proper JSON hierarchy nesting 
          //    IndentChars              - string to use when indenting, e.g. "\t" or "  "; allows "pretty-print" JSON output; when absent, no indenting takes place. Due to JSON.NET library limitation, the string must consist of identical characters.
 
          _produceStandaloneObjects = settingDict?.ContainsKey("ProduceStandaloneObjects") ?? false;

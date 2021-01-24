@@ -256,6 +256,23 @@
 
       <glossaryEntry>
         <terms>
+          <term termId="json">JSON data</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. JavaScript Object Notation (JSON) is a common data interchange format defined
+            in ECMA-404 and related standards. JSON data kind, like XML, requires data to be in a "tabular" format with explict record and cluster definitions.
+            Alternatively, unbound JSON data kind can be used to translate JSON data into canonical format. JSON data belongs to a record-centric data category.
+          </para>
+        </definition>
+        <relatedEntry termId="unboundjson" />
+        <relatedEntry termId="xml" />
+        <relatedEntry termId="recdata" />
+        <relatedEntry termId="canonical" />
+      </glossaryEntry>
+      
+      <glossaryEntry>
+        <terms>
           <term termId="kw">Keyword data</term>
           <term termId="kw">Key value pairs</term>
         </terms>
@@ -415,6 +432,23 @@
 
       <glossaryEntry>
         <terms>
+          <term termId="unboundjson">Unbound JSON data</term>
+        </terms>
+        <definition>
+          <para>
+            One of the data kinds natively supported by Data Conveyer. Like JSON data kind, it is used to read and write data in the standard JavaScript Object
+            Notation (JSON) format. Unlike JSON data kind, it does not require data to be tabular. Instead, unbound JSON converts hierarchical JSON data to and
+            from canonical data by using a special convention where field names define nesting of corresponding JSON values via dot notation. Specifically,
+            field names reflect the Path property JsonReader and JsonWriter as defined by Newtonsoft's Json.NET. JSON data belongs to a record-centric data category.
+          </para>
+        </definition>
+        <relatedEntry termId="json" />
+        <relatedEntry termId="recdata" />
+        <relatedEntry termId="canonical" />
+      </glossaryEntry>
+
+      <glossaryEntry>
+        <terms>
           <term termId="untypedrec">Untyped record</term>
         </terms>
         <definition>
@@ -474,10 +508,11 @@
         <definition>
           <para>
             One of the data kinds natively supported by Data Conveyer. Extensible Markup Language (XML) is defined in W3C's XML 1.0 specification.
-            To facilitate translation into canonical data, XML data needs to be in a "tabular" format where elements, such as records and fields,
+            To facilitate translation into canonical data, XML data needs to be in a "tabular" format where elements, such as records and clusters,
             are unambiguously defined. XML data belongs to a record-centric data category.
           </para>
         </definition>
+        <relatedEntry termId="json" />
         <relatedEntry termId="recdata" />
         <relatedEntry termId="canonical" />
       </glossaryEntry>

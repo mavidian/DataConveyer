@@ -68,7 +68,6 @@ namespace Mavidian.DataConveyer.Output
 
       /// <summary>
       /// Helper method to create constituent dispenser: arbitrary writer, target number, X12 indicator provided
-      /// (this method is internal to facilitate unit tests)
       /// </summary>
       /// <param name="writer"></param>
       /// <param name="targetNo"></param>

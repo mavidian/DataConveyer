@@ -1,6 +1,6 @@
 ﻿//AssemblyInfo.cs
 //
-// Copyright © 2016-2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.
+// Copyright © 2016-2021 Mavidian Technologies Limited Liability Company. All Rights Reserved.
 
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -13,7 +13,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mavidian Technologies")]
 [assembly: AssemblyProduct("DataConveyor_tests")]
-[assembly: AssemblyCopyright("Copyright © 2016-2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.")]
+[assembly: AssemblyCopyright("Copyright © 2016-2021 Mavidian Technologies Limited Liability Company. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

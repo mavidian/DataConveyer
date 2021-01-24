@@ -1,6 +1,6 @@
 ﻿//Orchestrator_tests.cs
 //
-// Copyright © 2016-2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.
+// Copyright © 2016-2021 Mavidian Technologies Limited Liability Company. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -242,7 +242,7 @@ namespace DataConveyer_tests.Orchestrators
          config.DataConveyerInfo.Name.Should().Be("DataConveyer");
          var ver = Assembly.GetAssembly(typeof(EtlOrchestrator)).GetName().Version;
          config.DataConveyerInfo.Version.Should().Be($"{ver.Major}.{ver.Minor}");
-         config.DataConveyerInfo.Copyright.Should().Be("Copyright © 2016-2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.");
+         config.DataConveyerInfo.Copyright.Should().Be("Copyright © 2016-2021 Mavidian Technologies Limited Liability Company. All Rights Reserved.");
          config.DataConveyerInfo.Date.Should().Be(File.GetLastWriteTime(currAssembly.Location));
       }
 

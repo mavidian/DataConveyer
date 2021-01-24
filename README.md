@@ -89,7 +89,7 @@ Please make sure to update tests as appropriate.
 ## Copyright
 
 ```
-Copyright © 2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.
+Copyright © 2019-2021 Mavidian Technologies Limited Liability Company. All Rights Reserved.
 ```
 
 [help_ref]: https://mavidian.github.io/DataConveyer-help/

@@ -1,6 +1,6 @@
 ﻿//XmlNodeDef.cs
 //
-// Copyright © 2018-2019 Mavidian Technologies Limited Liability Company. All Rights Reserved.using System;
+// Copyright © 2018-2021 Mavidian Technologies Limited Liability Company. All Rights Reserved.using System;
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

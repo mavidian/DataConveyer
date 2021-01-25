@@ -16,6 +16,7 @@
 
 
 using Mavidian.DataConveyer.Common;
+using Mavidian.DataConveyer.Entities.KeyVal;
 using Mavidian.DataConveyer.Logging;
 using Mavidian.DataConveyer.Orchestrators;
 using System;
@@ -739,6 +740,9 @@ namespace TextFileHandler
 
          progressCounts = new int[] { 0, 0, 0 };  //intake, transformation, output
 
+         var intType = new ItemDef(ItemType.Int);
+         var stringType = new ItemDef(ItemType.String);
+
          config = new OrchestratorConfig(LoggerCreator.CreateLogger(LoggerType.LogFile, "Part 11: process and create a JSON file (hierarchy-aware unbound JSON)", LogEntrySeverity.Information))
          {
             //CloseLoggerOnDispose = false,
@@ -746,8 +750,11 @@ namespace TextFileHandler
             ProgressInterval = 10,
             InputDataKind = KindOfTextData.UnboundJSON,
             InputFileNames = inputFlattenedJsonFile,
-            XmlJsonIntakeSettings = "CollectionNode|,RecordNode|",  //matches SQL Server FOR JSON output
-             ClusterMarker = (rec, prevRec, recCnt) =>
+            TypeDefiner = colName =>
+            {  // Note that ExplicitTypeDefinitions is not good enough here as field names on output are not fixed
+               return colName.EndsWith("Population") || colName.EndsWith("Drivers") || colName.EndsWith("Vehicles") ? intType : stringType;
+            },
+            ClusterMarker = (rec, prevRec, recCnt) =>
             {  //group records by State
                return (prevRec == null) || ((string)rec["State"]) != ((string)prevRec["State"]);
             },
@@ -765,11 +772,9 @@ namespace TextFileHandler
                {
                   Debug.Assert(state == (string)rec["State"]); //records got clustered by State
                   var year = (string)rec["Year"];
-                  outRec.AddItem($"{state}.{year}.Population", (string)rec["Population"]);
-                  outRec.AddItem($"{state}.{year}.Drivers", (string)rec["Drivers"]);
-                  outRec.AddItem($"{state}.{year}.Vehicles", (string)rec["Vehicles"]);
-                  //Note that we could have the above numbers cast to int instead of string, but this would require them to be of int type, i.e. the following config setting:
-                  // ExplicitTypeDefinitions = "Population|I,Drivers|I,Vehicles|I",
+                  outRec.AddItem($"{state}.{year}.Population", (int)rec["Population"]);
+                  outRec.AddItem($"{state}.{year}.Drivers", (int)rec["Drivers"]);
+                  outRec.AddItem($"{state}.{year}.Vehicles", (int)rec["Vehicles"]);
                }
                outClstr.AddRecord(outRec);
 
@@ -780,9 +785,9 @@ namespace TextFileHandler
                //   Debug.Assert(state == (string)rec["State"]); //records got clustered by State
                //   var year = (string)rec["Year"];
                //   var outRec = rec.GetEmptyClone();
-               //   outRec.AddItem($"{state}.{year}.Population", (string)rec["Population"]);
-               //   outRec.AddItem($"{state}.{year}.Drivers", (string)rec["Drivers"]);
-               //   outRec.AddItem($"{state}.{year}.Vehicles", (string)rec["Vehicles"]);
+               //   outRec.AddItem($"{state}.{year}.Population", (int)rec["Population"]);
+               //   outRec.AddItem($"{state}.{year}.Drivers", (int)rec["Drivers"]);
+               //   outRec.AddItem($"{state}.{year}.Vehicles", (int)rec["Vehicles"]);
                //   outClstr.AddRecord(outRec);
                //}
 

@@ -71,7 +71,7 @@ namespace Mavidian.DataConveyer.Entities.KeyVal
       public readonly string Format;  //for output only
 
       /// <summary>
-      /// Constructs the item type definition for a given type and format.
+      /// Create the item type definition for a given type and format.
       /// </summary>
       /// <param name="type">Type of the item to construct</param>
       /// <param name="format">Format of the item to construct</param>
@@ -80,6 +80,13 @@ namespace Mavidian.DataConveyer.Entities.KeyVal
          Type = type;
          Format = format;
       }
+
+      /// <summary>
+      /// Create the item type definition for a given type and no format.
+      /// </summary>
+      /// <param name="type">Type of the item to construct</param>
+      public ItemDef(ItemType type) : this(type, null) { }
+
    }
 
 }

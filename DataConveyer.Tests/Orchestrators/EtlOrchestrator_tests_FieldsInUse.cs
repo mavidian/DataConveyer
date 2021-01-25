@@ -185,7 +185,7 @@ namespace DataConveyer.Tests.Orchestrators
       {
          //arrange
          _config.ExcludeItemsMissingPrefix = false;
-         _config.TypeDefiner = key => key == "NUM" ? new ItemDef(ItemType.Int, null) : new ItemDef(ItemType.String, null);  //NUM Int, everything else String
+         _config.TypeDefiner = key => key == "NUM" ? new ItemDef(ItemType.Int) : new ItemDef(ItemType.String);  //NUM Int, everything else String
          _config.ClusterMarker = (rec, prevRec, recCnt) => { return (string)rec["RECTYPE"] == "XYZ"; };  //records having @pRECTYPE=XYZ denote start of the cluster
          _config.MarkerStartsCluster = true;  //predicate matches the first record in cluster
          _config.AllowOnTheFlyInputFields = true;

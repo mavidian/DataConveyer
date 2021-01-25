@@ -321,8 +321,8 @@ namespace DataConveyer.Tests.Orchestrators_Intake
          _config.ActionOnDuplicateKey = ActionOnDuplicateKey.IgnoreItem;
          _config.TypeDefiner = key =>
          {
-            return key == "EOF" ? new ItemDef(ItemType.DateTime, null)
-                                : new ItemDef(ItemType.String, null);
+            return key == "EOF" ? new ItemDef(ItemType.DateTime)
+                                : new ItemDef(ItemType.String);
          }; //make EOF field DateTime, everything else String
          _config.ClusterMarker = (rec, prevRec, recCnt) => { return true; };  //single record cluster
          _config.MarkerStartsCluster = true;  //predicate matches the first record in cluster 
@@ -365,7 +365,7 @@ namespace DataConveyer.Tests.Orchestrators_Intake
          _config.InputKeyPrefix = "";
          _config.ExcludeItemsMissingPrefix = false;
          _config.ActionOnDuplicateKey = ActionOnDuplicateKey.IgnoreItem;
-         _config.TypeDefiner = key => { return new ItemDef(ItemType.Int, null); }; //everything int
+         _config.TypeDefiner = key => { return new ItemDef(ItemType.Int); }; //everything int
          _config.ClusterMarker = (rec, prevRec, recCnt) => { return true; };  //single record cluster
          _config.MarkerStartsCluster = true;  //predicate matches the first record in cluster 
 

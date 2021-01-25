@@ -134,7 +134,9 @@ namespace Mavidian.DataConveyer.Common
       /// </summary>
       JSON,
       /// <summary>
-      ///  JSON data of unlimited hierarchy depth (subject to special field naming convention).
+      ///  Hierarchical JSON data with unlimited nesting. Field hierarchy is defined using a convention where the field's name reflects the Path property
+      ///  of the Newtonsoft's JsonReader class. For example, JSON string <c>{"Data":{"DataId":42,"Values":["val1","val2"]}}</c> is equivalent
+      ///  to 3 fields named "Data.DataId", "Data.Values[0]" and "Data.Values[1]" with respective values of 42, "val1" and "val2".
       /// </summary>
       UnboundJSON,
       /// <summary>

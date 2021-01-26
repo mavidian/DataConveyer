@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using Mavidian.DataConveyer.Common;
+using Mavidian.DataConveyer.Orchestrators;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -28,23 +29,38 @@ namespace Mavidian.DataConveyer.Intake
    internal class UnboundJsonFeederForSource : LineFeederForSource
    {
       private readonly JsonTextReader _jsonReader;
+      private int _clstrNo;  // relevant if RespectClusters is present; otherwise 0
+      private bool _before1stClstr;
+
+      // Settings to be determined by the ctor:
+      private readonly bool _detectClusters; // if present, JSON arrays will denote record clustering on intake (any change in array nesting, will constitute new cluster); if absent (default), array nesting of JSON objects is ignored.
 
       private readonly List<JsonToken> _tokensThatAreValues; // JSON tokens that identify values to output (i.e. items of the records)
 
-      internal UnboundJsonFeederForSource(TextReader reader, int sourceNo) : base(reader, sourceNo)
+      internal UnboundJsonFeederForSource(TextReader reader, int sourceNo, string settings) : base(reader, sourceNo)
       {
          //Note that reader is passed to base class, even though it is not used there (all relevant methods are overridden, so null could've been passed instead).
          //This is because base.Dispose (called by Dispose in this class) disposes the reader (there is no public JsonReader.Dispose method).
+
+         var settingDict = settings?.SplitPairsToListOfTuples()?.ToDictionary(t => t.Item1, t => t.Item2);
+
+         //Settings:
+         //    DetectClusters - if present, JSON arrays will denote record clustering on intake (any change in array nesting, will constitute new cluster); if absent (default), array nesting of JSON objects is ignored.
+
+         _detectClusters = settingDict?.ContainsKey("DetectClusters") ?? false;
+
+         // Syntax rules for unbound JSON:
+         // 1. Each record is a (top-level) JSON object, i.e.  {..}.
+         // 2. Collection of records is either a top-level array of objects: [{..},..,{..}] or subsequent objects: {..}{..} (not a true JSON, but commonly used).
+         // 3. JSON object can be nested in arrays to support clusters (if DetectClusters is present); any change in array nesting constitutes a new cluster.
+         // 4. A column name is the same as Json.NET Path property; no implied column names.
+         _jsonReader = new JsonTextReader(reader)
          {
-            // Syntax rules for unbound JSON:
-            // 1. Each record is a (top-level) JSON object, i.e.  {..}.
-            // 2. Collection of records is either a top-level array of objects: [{..},..,{..}] or subsequent objects: {..}{..} (not a true JSON, but commonly used).
-            // 3. A column name is the same as Json.NET Path property; no implied column names.
-            _jsonReader = new JsonTextReader(reader)
-            {
-               SupportMultipleContent = true // allow mulitple JSON objects (as records) in addition to a JSON array
-            };
-            _tokensThatAreValues = new List<JsonToken>() {
+            SupportMultipleContent = true // allow mulitple JSON objects (as records) in addition to a single JSON array; similarly, multiple arrays are allowed
+         };
+         _clstrNo = 0;
+         _before1stClstr = true;
+         _tokensThatAreValues = new List<JsonToken>() {
                                        JsonToken.String,
                                        JsonToken.Integer,
                                        JsonToken.Float,
@@ -52,7 +68,6 @@ namespace Mavidian.DataConveyer.Intake
                                        JsonToken.Null,
                                        JsonToken.Undefined  // absence of value, e.g. "MyUndefinedValue":, - technically invalid JSON, but Json.NET parses it as Undefined
                                     };
-         }
       }
 
 
@@ -81,12 +96,24 @@ namespace Mavidian.DataConveyer.Intake
       /// <returns>The next record read.</returns>
       private Xrecord SupplyNextXrecord()
       {
+         bool newCluster = false;
          while (_jsonReader.Read())
          {
-            if (_jsonReader.TokenType == JsonToken.StartObject)
+            //Note that newCluster will be set if array nesting level is in any way different from prior record
+            switch (_jsonReader.TokenType)
             {
-               return new Xrecord(GetRecordFromJsonObject().ToList());
+               case JsonToken.StartArray:
+               case JsonToken.EndArray:
+                  newCluster = true;
+                  break;
+               case JsonToken.StartObject:
+                  if (_detectClusters && (newCluster || _before1stClstr)) _clstrNo++;
+                  _before1stClstr = false;
+                  return new Xrecord(GetRecordFromJsonObject().ToList(), _clstrNo);
+               ////default:
+               ////   throw new InvalidDataException($"Unexpected token '{_jsonReader.Value}' of type '{_jsonReader.TokenType}' encountered in JSON intake.");
             }
+
          }
          return null;  // end of data
       }

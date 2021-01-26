@@ -32,6 +32,7 @@ namespace DataConveyer_tests.Intake
       // Test data is kept in this dictionary:
       private Dictionary<string,               // testCase, i.e. key (e.g. SingleRecord
                          Tuple<string,         // input JSON
+                               string,         // settings
                                List<Xrecord>   // expected
                               >
                         > _testDataRepo;
@@ -40,7 +41,7 @@ namespace DataConveyer_tests.Intake
       [TestInitialize]
       public void Initialize()
       {
-         _testDataRepo = new Dictionary<string, Tuple<string, List<Xrecord>>>();
+         _testDataRepo = new Dictionary<string, Tuple<string, string, List<Xrecord>>>();
 
 #region SingleRecord:
          //single record
@@ -51,6 +52,8 @@ namespace DataConveyer_tests.Intake
       city: ""New York"",
       age: 17
 }",
+             //settings:
+             string.Empty,
              //expected:
              new List<Xrecord>
              {
@@ -65,10 +68,8 @@ namespace DataConveyer_tests.Intake
          #endregion SingleRecord
 
 
-
-
-         #region SetOfRecords:
-         //set of top level JSON objects (technically not a valid JSON, but commonly used - interpreted the same
+#region SetOfRecords:
+         //set of top level JSON objects (technically not a valid JSON, but commonly used - interpreted the same as array of objects
          _testDataRepo.Add("SetOfRecords", Tuple.Create(
 //input:
 @"{
@@ -86,23 +87,25 @@ namespace DataConveyer_tests.Intake
   city: ""Chicago"",
   age: 20
 }",
+             //settings:
+             string.Empty,
              //expected:
              new List<Xrecord>
              {
                 new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
                                                                Tuple.Create("city","New York" as object),
                                                                Tuple.Create("age", 17 as object)
-                                                             }
+                                                             }, 0
                            ),
                 new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","John" as object),
                                                                Tuple.Create("city","New York" as object),
                                                                Tuple.Create("age", 30 as object)
-                                                             }
+                                                             }, 0
                            ),
                 new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Sue" as object),
                                                                Tuple.Create("city","Chicago" as object),
                                                                Tuple.Create("age", 20 as object)
-                                                             }
+                                                             }, 0
                            )
              }  //expected
                                                     ) //Tuple.Create
@@ -110,17 +113,167 @@ namespace DataConveyer_tests.Intake
 #endregion SetOfRecords
 
 
+#region SetOfClusters:
+         //set of top level JSON arrays (technically not a valid JSON, but commonly used - interpreted the same as array of arrays
+         _testDataRepo.Add("SetOfClusters", Tuple.Create(
+//input:
+@"[
+  {
+    name: ""Jimmy"",
+    city: ""New York"",
+    age: 17
+  }
+]
+[
+  {
+    name: ""John"",
+    city: ""New York"",
+    age: 30
+  },
+  {
+    name: ""Sue"",
+    city: ""Chicago"",
+    age: 20
+  }
+]",
+             //settings:
+             "DetectClusters",
+             //expected:
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }, 1
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","John" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 30 as object)
+                                                             }, 2
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Sue" as object),
+                                                               Tuple.Create("city","Chicago" as object),
+                                                               Tuple.Create("age", 20 as object)
+                                                             }, 2
+                           )
+             }  //expected
+                                                    ) //Tuple.Create
+                          );  //Add SetOfClusters
+#endregion SetOfClusters
+
+
+#region MixedClusters:
+         //top level JSON object and array (technically not a valid JSON, but commonly used), object treated as a single record cluster
+         _testDataRepo.Add("MixedClusters", Tuple.Create(
+//input:
+@"{
+  name: ""Jimmy"",
+  city: ""New York"",
+  age: 17
+}
+[
+  {
+    name: ""John"",
+    city: ""New York"",
+    age: 30
+  },
+  {
+    name: ""Sue"",
+    city: ""Chicago"",
+    age: 20
+  }
+]",
+             //settings:
+             "DetectClusters",
+             //expected:
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }, 1
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","John" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 30 as object)
+                                                             }, 2
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Sue" as object),
+                                                               Tuple.Create("city","Chicago" as object),
+                                                               Tuple.Create("age", 20 as object)
+                                                             }, 2
+                           )
+             }  //expected
+                                                    ) //Tuple.Create
+                          );  //Add MixedClusters
+#endregion MixedClusters
+
+
+#region ArrayOfClusters:
+         //array of JSON arrays, each interpreted as a cluster
+         _testDataRepo.Add("ArrayOfClusters", Tuple.Create(
+//input:
+@"[
+  [
+    {
+      ""name"": ""Jimmy"",
+      ""city"": ""New York"",
+      ""age"": 17
+    },
+    {
+      ""name"": ""John"",
+      ""city"": ""New York"",
+      ""age"": 30
+    }
+  ],
+  [
+    {
+      ""name"": ""Sue"",
+      ""city"": ""Chicago"",
+      ""age"": 20
+    }
+  ]
+]",
+             //settings:
+             "DetectClusters",
+             //expected:
+             new List<Xrecord>
+             {
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Jimmy" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 17 as object)
+                                                             }, 1
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","John" as object),
+                                                               Tuple.Create("city","New York" as object),
+                                                               Tuple.Create("age", 30 as object)
+                                                             }, 1
+                           ),
+                new Xrecord(new List<Tuple<string,object>>() { Tuple.Create("name","Sue" as object),
+                                                               Tuple.Create("city","Chicago" as object),
+                                                               Tuple.Create("age", 20 as object)
+                                                             }, 2
+                           )
+             }  //expected
+                                                    ) //Tuple.Create
+                          );  //Add ArrayOfClusters
+#endregion ArrayOfClusters
+
 
 #region ArrayWithNoRecords:
          //array with simple values (no records will be extracted)
          _testDataRepo.Add("ArrayWithNoRecords", Tuple.Create(
 //input:
 @"[
-     ""Jimmy"",
-     ""Peter"",
-     ""John"",
-     ""Anna""
+  ""Jimmy"",
+  ""Peter"",
+  [
+    ""John"",
+    ""Anna""
+  ]
 ]",
+             //settings:
+             string.Empty,
              //expected:
              new List<Xrecord>() //expected (no records)
                                                              ) //Tuple.Create
@@ -149,6 +302,8 @@ namespace DataConveyer_tests.Intake
       age: 20
     }
 ]",
+             //settings:
+             string.Empty,
              //expected:
              new List<Xrecord>
              {
@@ -201,6 +356,8 @@ namespace DataConveyer_tests.Intake
     ]
   }
 ]",
+             //settings:
+             string.Empty,
              //expected:
              new List<Xrecord>
              {
@@ -243,6 +400,9 @@ namespace DataConveyer_tests.Intake
       [DataTestMethod]
       [DataRow("SingleRecord")]
       [DataRow("SetOfRecords")]
+      [DataRow("SetOfClusters")]
+      [DataRow("MixedClusters")]
+      [DataRow("ArrayOfClusters")]
       [DataRow("ArrayWithNoRecords")]
       [DataRow("ArrayOfSimpleRecords")]
       [DataRow("ArrayOfComplexRecords")]
@@ -253,11 +413,12 @@ namespace DataConveyer_tests.Intake
          //arrange
          var testData = _testDataRepo[testCase];
          var inputJSON = testData.Item1;
+         var settings = testData.Item2;
          var dummySourceNo = 42;
-         var xrecordSupplier = new UnboundJsonFeederForSource(new StringReader(inputJSON), dummySourceNo);
+         var xrecordSupplier = new UnboundJsonFeederForSource(new StringReader(inputJSON), dummySourceNo, settings);
          var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
          var actual = new List<Xrecord>();
-         var expected = testData.Item2;
+         var expected = testData.Item3;
 
          //act
          Xrecord elem;
@@ -287,11 +448,12 @@ namespace DataConveyer_tests.Intake
          //arrange
          var testData = _testDataRepo[testCase];
          var inputJSON = testData.Item1;
+         var settings = testData.Item2;
          var dummySourceNo = 42;
-         var xrecordSupplier = new UnboundJsonFeederForSource(new StringReader(inputJSON), dummySourceNo);
+         var xrecordSupplier = new UnboundJsonFeederForSource(new StringReader(inputJSON), dummySourceNo, settings);
          var xrecordSupplierPO = new PrivateObject(xrecordSupplier);
          var actual = new List<Xrecord>();
-         var expected = testData.Item2;
+         var expected = testData.Item3;
 
          //act
          Xrecord elem;

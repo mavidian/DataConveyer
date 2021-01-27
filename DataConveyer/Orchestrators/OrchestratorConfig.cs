@@ -1069,10 +1069,10 @@ namespace Mavidian.DataConveyer.Orchestrators
 
 
       /// <summary>
-      /// A string containing comma-separated parameters for parsing <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> data on intake.
+      /// A string containing comma-separated parameters for parsing <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/> data on intake.
       /// Each such parameter is a key-value pair with a pipe symbol (|) separating the key and the value.
       /// The parameters reflect the shape of data to parse and define the elements to be extracted.
-      /// There are some differences (explained below) in their interpretation in case of <see cref="KindOfTextData.XML"/> vs <see cref="KindOfTextData.JSON"/>.
+      /// There are some differences (explained below) in their interpretation in case of <see cref="KindOfTextData.XML"/> vs <see cref="KindOfTextData.JSON"/> vs <see cref="KindOfTextData.UnboundJSON"/>.
       /// The following keys can be used:
       /// <list type="bullet">
       ///   <item>
@@ -1081,6 +1081,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///       "xpath" to the collection of clusters (or records if the ClusterNode parameter is absent).
       ///       If this parameter is absent for <see cref="KindOfTextData.XML"/>, then intake is expected to contain XML fragment where each root constitutes a record or a cluster.
       ///       In case of <see cref="KindOfTextData.JSON"/>, absent or empty value generally means an array instead of an object.
+      ///       Ignored in case of <see cref="KindOfTextData.UnboundJSON"/>.
       ///     </description>
       ///   </item>
       ///   <item>
@@ -1089,6 +1090,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///       "xpath" to the cluster node within the collection node. Records within a cluster node will be assigned the same cluster number (sequential).
       ///       If this parameter is absent, then all records will be assigned a cluster number of 0 (undetermined) and the clusters will
       ///       be determined solely by the <see cref="ClusterMarker"/> function.
+      ///       Ignored in case of <see cref="KindOfTextData.UnboundJSON"/>.
       ///     </description>
       ///   </item>
       ///   <item>
@@ -1096,12 +1098,13 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///     <description>
       ///       "xpath" to the record node within the cluster node (or the collection node if the cluster node is empty).
       ///       The RecordNode parameter cannot be absent, although in case of <see cref="KindOfTextData.JSON"/>, it can be empty.
+      ///       Ignored in case of <see cref="KindOfTextData.UnboundJSON"/>.
       ///     </description>
       ///   </item>
       ///   <item>
       ///     <term>IncludeExplicitText</term>
       ///     <description>
-      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. true to include explicit text inside record nodes in XML data; false (default) to ignore explicit text.
+      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. true to include explicit text inside record nodes in XML data; false (default) to ignore explicit text.
       ///       Explicit text is the text contained directly inside an XML element that represents the record node; this is not typically expected.
       ///       Data Conveyer assigns a special key of "__explicitText__" to explicit text in the record node.
       ///     </description>
@@ -1109,7 +1112,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///   <item>
       ///     <term>IncludeAttributes</term>
       ///     <description>
-      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. true to include attributes (the key of the corresponding item will be prefixed by @); truePlain to include attributes (without prefix in item key); false (default) to ignore explicit text.
+      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. true to include attributes (the key of the corresponding item will be prefixed by @); truePlain to include attributes (without prefix in item key); false (default) to ignore explicit text.
       ///       It is generally recommended that the keys (names) of items that originate from XML attributes be prepended with @; therefore setting of true is preferred over truePlain.
       ///       In the latter case, name conflicts are possible between items originating from attributes and inner nodes. 
       ///     </description>
@@ -1117,12 +1120,21 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///   <item>
       ///     <term>AddClusterDataToTraceBin</term>
       ///     <description>
-      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/>. Also ignored if ClusterNode value is absent.
+      ///       <see cref="KindOfTextData.XML"/> only, ignored in case of <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>. Also ignored if ClusterNode value is absent.
       ///       true to include attributes of the cluster node(s) as key value pairs in the trace bins attached to the records of the cluster.
       ///       false to exclude cluster data from intake processing.
       ///       The keys of the elements placed in the trace bin reflect nodes traversed to reach the cluster node (including the attribute node itself)
       ///       separated by periods. For example, if ClusterNode value is Region/State and the actual nodes contain &lt;Region name="East"&gt;&lt;State abbrev="NJ"&gt;...,
       ///       then there will be 2 elements placed in the trace bin with keys of Region.name and Region.State.abbrev and the corresponding values of East and NJ.
+      ///     </description>
+      ///   </item>
+      ///   <item>
+      ///     <term>AddClusterDataToTraceBin</term>
+      ///     <description>
+      ///       <see cref="KindOfTextData.UnboundJSON"/> only, ignored in case of <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.
+      ///       If present, Data Conveyer will recognize clusters on intake by tracking nesting levels of JSON arrays that surround JSON objects, i.e. intake records.
+      ///       In case, the level is not identical as on previous record, a new cluster is detected.
+      ///       If absent, array nesting of JSON objects is ignored and records remain unclustered (although clusters can still be assigned via the <see cref="ClusterMarker"/> function).
       ///     </description>
       ///   </item>
       /// </list>
@@ -1147,11 +1159,9 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <para><b>Example 5:</b><c>"ClusterNode|,RecordNode|"</c><i>(<see cref="KindOfTextData.JSON"/> only - an array of arrays=clusters of objects=records)</i></para>
       /// <para><b>Example 6:</b><c>"RecordNode|"</c><i>(<see cref="KindOfTextData.JSON"/> only - multiple objects containing records)</i></para>
       /// <para><b>Example 7:</b><c>"CollectionNode|Root/Members[@region=\"North\"],ClusterNode|Group[@id=2][@zone=\"\"]/Family,RecordNode|Data/Member[@class],IncludeExplicitText|true"</c><i>(<see cref="KindOfTextData.XML"/> only)</i></para>
-      /// <para>This configuration setting is only applicable when <see cref="InputDataKind"/> value is <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.</para>
+      /// <para><b>Example 8:</b><c>"DetectClusters"</c><i>(<see cref="KindOfTextData.UnboundJSON"/> only</i></para>
+      /// <para>This configuration setting is only applicable when <see cref="InputDataKind"/> value is <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>.</para>
       /// <note type="note">
-      /// <para>
-      /// This configuration setting is not relevant to processing of <see cref="KindOfTextData.UnboundJSON"/> intake..
-      /// </para>
       /// </note>
       /// </summary>
       public string XmlJsonIntakeSettings { get; set; }

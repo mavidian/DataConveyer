@@ -289,7 +289,7 @@ namespace Mavidian.DataConveyer.Output
          //   InnArr - Label   - JSON array (as it is followed by a Counter)
          //   2      - Counter - JSON value (as it is the last element)
          var segmentsSoFar = new Stack<LorC>(); // reflect current/previous nesting on JSON output
-         segmentsSoFar.Push(new LorC("dummy~!`'&^%$???")); // starting point ("previously output path"); will get removed (as long as no match with actual key)
+         segmentsSoFar.Push(new LorC("dummy~!`'&^%$???")); // starting point ("previous output path"); will get removed (as long as no match with actual key)
          foreach (var item in items)
          {
             var currSegments = SplitColumnName(item.Item1);

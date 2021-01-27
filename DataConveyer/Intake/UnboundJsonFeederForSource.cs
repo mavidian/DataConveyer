@@ -110,10 +110,7 @@ namespace Mavidian.DataConveyer.Intake
                   if (_detectClusters && (newCluster || _before1stClstr)) _clstrNo++;
                   _before1stClstr = false;
                   return new Xrecord(GetRecordFromJsonObject().ToList(), _clstrNo);
-               ////default:
-               ////   throw new InvalidDataException($"Unexpected token '{_jsonReader.Value}' of type '{_jsonReader.TokenType}' encountered in JSON intake.");
             }
-
          }
          return null;  // end of data
       }

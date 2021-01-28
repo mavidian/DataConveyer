@@ -122,7 +122,7 @@ namespace Mavidian.DataConveyer.Common
       /// </summary>
       Flat,
       /// <summary>
-      /// Text data with fields "cherry-picked" using arbitrary formulas.
+      /// Text data with fields "cherry-picked" using arbitrary formulas (regex).
       /// </summary>
       Arbitrary,
       /// <summary>
@@ -134,9 +134,9 @@ namespace Mavidian.DataConveyer.Common
       /// </summary>
       JSON,
       /// <summary>
-      ///  Hierarchical JSON data with unlimited nesting. Field hierarchy is defined using a convention where the field's name reflects the Path property
-      ///  of the Newtonsoft's JsonReader class. For example, JSON string <c>{"Data":{"DataId":42,"Values":["val1","val2"]}}</c> is equivalent
-      ///  to 3 fields named "Data.DataId", "Data.Values[0]" and "Data.Values[1]" with respective values of 42, "val1" and "val2".
+      ///  JSON data with unlimited nesting hierarchy. The hierarchy is reflected using a dot-notation. Specifically, field names follow the convention of the Path property
+      ///  in the Newtonsoft's JsonReader. For example, a JSON object defined as <c>{"Data":{"DataId":42,"Values":["val1","val2"]}}</c> is equivalent to a record with these
+      ///  3 fields: <c>"Data.DataId"</c> with a value of <c>42</c>, <c>"Data.Values[0]"</c> with a value of <c>"val1"</c>, and <c>"Data.Values[1]"</c> with a value of <c>"val2"</c>.
       /// </summary>
       UnboundJSON,
       /// <summary>

@@ -962,10 +962,23 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// In case this function marks the first record of a cluster (i.e. <see cref="MarkerStartsCluster"/> is true), then the current record starts a new set of records accumulated for a cluster;
       /// otherwise (<see cref="MarkerStartsCluster"/> is false, i.e. the function marks the last record of a cluster), the current record ends the set of records accumulated for a cluster, and a new empty
       /// set of accumulated records is created.
-      /// If not specified, the default function will split clusters on every record, i.e.:
-      /// <code language="c#">(r, pr, i) => true</code>
-      /// <code language="vb">Function(r, pr, i) True</code>
+      /// If not specified, the default function will split clusters on every record, with one notable exception as follows:
+      /// In case of XML/JSON intake (<see cref="KindOfTextData.XML"/>, <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>) and the <see cref="XmlJsonIntakeSettings"/> setting
+      /// directing Data Conveyer to automatically detect clusters (ClusterNode or DetectClusters respectively), then Data Conveyer will respect clusters detected
+      /// from XML/JSON intake.
+      /// Here are is the default <see cref="ClusterMarker"/> function:
+      /// <code language="c#">(r, pr, i) => r.ClstrNo == 0 || pr == null || r.ClstrNo != pr.ClstrNo;</code>
+      /// <code language="vb">Function(r, pr, i) r.ClstrNo = 0 OrElse pr Is Nothing OrElse r.ClstrNo &lt;&gt; pr.ClstrNo</code>
       /// Any exception thrown by this function will cause the process shutdown with a completion status of <see cref="CompletionStatus.Failed"/>.
+      /// <note>
+      /// <para>
+      /// An astute reader may be asking what will happen when the automatic cluster detection during XML/JSON intake coexists with explicit (non-default)
+      /// <see cref="ClusterMarker"/> and <see cref="MarkerStartsCluster"/> settings. In this advanced scenario, the <see cref="ClusterMarker"/> function can
+      /// override the cluster assignment made by the XML/JSON intake. The ClstrNo property of the <see cref="IRecord"/> (either current or previous) can be used in a logic to
+      /// decide whether to return true (new cluster) or false (continue with old cluster).
+      /// </para>
+      /// </note>
+      /// 
       /// </summary>
       [XmlIgnore]
       public Func<IRecord, IRecord, int, bool> ClusterMarker { get; set; }
@@ -1014,7 +1027,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// Array of elements that define fields to be extracted from input lines.
       /// Each element is a string consisting of 2 parts separated by a space: a field name followed by a regular expression containing formula to extract a value from input line.
       /// Data Conveyer will extract the fields in the order they are specified in this setting.
-      /// This setting is mandatory for <see cref="InputDataKind"/> of Arbitrary; if specified for other data kinds, it is ignored.
+      /// This setting is mandatory for <see cref="InputDataKind"/> of <see cref="KindOfTextData.Arbitrary"/>; if specified for other data kinds, it is ignored.
       /// </summary>
       public string[] ArbitraryInputDefs
       {
@@ -1129,11 +1142,11 @@ namespace Mavidian.DataConveyer.Orchestrators
       ///     </description>
       ///   </item>
       ///   <item>
-      ///     <term>AddClusterDataToTraceBin</term>
+      ///     <term>DetectClusters</term>
       ///     <description>
       ///       <see cref="KindOfTextData.UnboundJSON"/> only, ignored in case of <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/>.
-      ///       If present, Data Conveyer will recognize clusters on intake by tracking nesting levels of JSON arrays that surround JSON objects, i.e. intake records.
-      ///       In case, the level is not identical as on previous record, a new cluster is detected.
+      ///       If present, Data Conveyer will recognize clusters on intake by tracking nesting levels of JSON objects (intake records).
+      ///       In case the level is not the same as on previous record, a new cluster is detected.
       ///       If absent, array nesting of JSON objects is ignored and records remain unclustered (although clusters can still be assigned via the <see cref="ClusterMarker"/> function).
       ///     </description>
       ///   </item>
@@ -1159,10 +1172,8 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <para><b>Example 5:</b><c>"ClusterNode|,RecordNode|"</c><i>(<see cref="KindOfTextData.JSON"/> only - an array of arrays=clusters of objects=records)</i></para>
       /// <para><b>Example 6:</b><c>"RecordNode|"</c><i>(<see cref="KindOfTextData.JSON"/> only - multiple objects containing records)</i></para>
       /// <para><b>Example 7:</b><c>"CollectionNode|Root/Members[@region=\"North\"],ClusterNode|Group[@id=2][@zone=\"\"]/Family,RecordNode|Data/Member[@class],IncludeExplicitText|true"</c><i>(<see cref="KindOfTextData.XML"/> only)</i></para>
-      /// <para><b>Example 8:</b><c>"DetectClusters"</c><i>(<see cref="KindOfTextData.UnboundJSON"/> only</i></para>
+      /// <para><b>Example 8:</b><c>"DetectClusters"</c><i>(<see cref="KindOfTextData.UnboundJSON"/> only)</i></para>
       /// <para>This configuration setting is only applicable when <see cref="InputDataKind"/> value is <see cref="KindOfTextData.XML"/> or <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>.</para>
-      /// <note type="note">
-      /// </note>
       /// </summary>
       public string XmlJsonIntakeSettings { get; set; }
 
@@ -2094,13 +2105,14 @@ namespace Mavidian.DataConveyer.Orchestrators
 
 
       /// <summary>
-      /// Array of strings that define data to be placed in output lines.
-      /// Each string contains a fragment of output line and may contain a single token in a form of {field}, where
-      /// such token will be substituted in the output record by the actual value of the field.
-      /// In order to include brace characters in the output, they need to be escaped (preceded by a backslash), like so: \{ and \}.
-      /// Note though that backslash characters inside C# string literals may need to be escaped themselves.
-      /// For example: "\\{ "Format":"JSON" \\}" or @"\{ "Format":"JSON" \}" will both output identical JSON string.
-      /// This setting is mandatory for <see cref="OutputDataKind"/> of Arbitrary; if specified for other data kinds, it is ignored.
+      /// Array of strings that define data to be placed on output lines.
+      /// Each string contains a fragment of the output line and may contain a single token in a form of <c>{field}</c>, where
+      /// such token will be substituted by the actual value of the field.
+      /// In order to include brace characters in the output, they need to be escaped (preceded by a backslash), like so: <c>\{</c> and <c>\}</c>.
+      /// Note that backslash characters inside C# string literals may need to be escaped themselves.
+      /// For example: <c>"\\{ "Format":"JSON" \\}"</c> (as well as <c>@"\{ ""Format"":""JSON"" \}"</c>) will output <c>{ "Format": "JSON" }</c>.
+      /// Data fragments defined by array elements are spliced together to form output lines.
+      /// This setting is mandatory for <see cref="OutputDataKind"/> of <see cref="KindOfTextData.Arbitrary"/>; if specified for other data kinds, it is ignored.
       /// </summary>
       public string[] ArbitraryOutputDefs { get; set; }
 
@@ -2260,7 +2272,7 @@ namespace Mavidian.DataConveyer.Orchestrators
       /// <para><b>Example 5:</b><c>"ClusterNode|,RecordNode|"</c><i>(<see cref="KindOfTextData.JSON"/> only - an array of arrays=clusters of objects=records)</i></para>
       /// <para><b>Example 6:</b><c>""</c><i>(JSON only - all node parameters absent is a special case that results in multiple objects containing records)</i></para>
       /// <para><b>Example 7:</b><c>"CollectionNode|Root/Members[@region=North],ClusterNode|Group[@id=2][@zone=\"\"]/Family,RecordNode|Data/Member[@class=\"main\"],AttributeFields|ID;zone"</c><i>(<see cref="KindOfTextData.XML"/> only)</i></para>
-      /// <para><b>Example 8:</b><c>"ProduceStandaloneObjects,SkipColumnPresorting,IndentChars|  "</c><i>(UnboundJSON)</i></para>
+      /// <para><b>Example 8:</b><c>"ProduceStandaloneObjects,SkipColumnPresorting,IndentChars|  "</c><i>(<see cref="KindOfTextData.UnboundJSON"/> only)</i></para>
       /// <para>This configuration setting is only applicable when <see cref="OutputDataKind"/> value is <see cref="KindOfTextData.XML"/>, <see cref="KindOfTextData.JSON"/> or <see cref="KindOfTextData.UnboundJSON"/>.</para>
       /// </summary>
       public string XmlJsonOutputSettings { get; set; }
